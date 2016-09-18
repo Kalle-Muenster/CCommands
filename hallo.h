@@ -7,7 +7,6 @@
 \*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/
 #ifndef using_hallo_command
 #define using_hallo_command hallo.cc
-#include "hallo.c"
 
    		//Todo:...
 		

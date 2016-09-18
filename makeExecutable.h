@@ -7,7 +7,6 @@
 \*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/
 #ifndef using_makeExecutable
 #define using_makeExecutable makeExecutable.cc
-#include "makeExecutable.c"
 
 #define	F_OK 0
 

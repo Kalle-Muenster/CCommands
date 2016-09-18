@@ -7,7 +7,6 @@
 \*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/
 #ifndef using_environMentor
 #define using_environMentor environMentor.cc
-#include "environMentor.c"
 
 
 void changeEnvironment(int);

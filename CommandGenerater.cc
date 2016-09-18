@@ -1,5 +1,5 @@
 #ifndef _OnTheFly_
-#include "ClassTemplates.h"
+#include "CommandGenerater.h"
 #endif
 
 #include "commandLiner.h"
@@ -7,17 +7,24 @@
 #include <string.h>
 #include <time.h>
 
+void generateHeaderFile(char*);
+void generateCodeFile(char*,char);
+void generateCallerFile(char*);
+void getCurrentDate(byte*);
+int  parseText(const byte*,byte*);
+
 typedef struct tm Date;
 
 enum TOKKEN
 {
-	CLASSNAME,
+	COMMANDNAME,
 	DATE,
 	NAME,
 	EXTENSION,
 	SNIPPED,
 
 TOKKEN_COUNT};
+
 const char* tokkenStrings[TOKKEN_COUNT] =
 {
 	"CommandName",
@@ -62,6 +69,7 @@ const byte Snipped_HalloWorld[]={
 };
 
 enum SNIPPED_TOKKEN {NONE,HALLOWORLD,SNIPPED_COUNT};
+
 struct Snipped {
 	const byte* tokkenNames[SNIPPED_COUNT]; 
 	byte* Tokken[SNIPPED_COUNT];
@@ -92,7 +100,6 @@ const byte InfoHeader[] = {
 const byte HeaderFile[] = {
 "#ifndef using_^CommandName^\n"	
 "#define using_^CommandName^ ^CommandName^.cc\n"
-"#include \"^CommandName^.c\"\n"
 "\n"
 "\n"
 "   		//Todo:...\n"
@@ -149,6 +156,7 @@ enum SPACE
 SPACE_COUNT};
 
 char outputDirectory[128] = {'\0'};
+
 byte _tokkenBuffer[(TOKKEN_COUNT+SPACE_COUNT)*128] = {'\0'};
 byte* Tokken[TOKKEN_COUNT];
 
@@ -196,9 +204,9 @@ void initialize(void)
 	strcpy(Snipped.Tokken[HALLOWORLD],&Snipped_HalloWorld[0]);
 	
 	byte** pTkkn = &Tokken[0];
-	assignTokken(pTkkn,CLASSNAME,"HalloWorld");
+	assignTokken(pTkkn,COMMANDNAME,"HalloWorld");
 	assignTokken(pTkkn,NAME,"Kalle");
-	assignTokken(pTkkn,DATE,"by ClassFileGenerator v0.0");
+	assignTokken(pTkkn,DATE,"by ClassFileGenerator v0.1");
 	assignTokken(pTkkn,EXTENSION,".cpp");
 	assignTokken(pTkkn,SNIPPED,"^Snipped.HalloWorld^");
 }
@@ -239,8 +247,8 @@ void showHelpScreen(void)
 	printf("\nusage: \n\n   options:\n\n");
 	printf("   -d             -  write current date to info\n");
 	printf("   -s             -  silent (no feedback on stdout)\n");
-	printf("  --c-CommandName -  use string 'class name' for ClassName\n");
-	printf("  --n-namespace   -  surround Class by namespace 'namespace'\n");
+	printf("  --c-CommandName -  use string 'CommandName' for COMMANDNAME\n");
+//	printf("  --n-namespace   -  surround Class by namespace 'namespace'\n");
 	printf("  --a-author      -  set 'name' used for Author in info\n");
 	printf("   -e             -  use 'HalloWorld' example instead of generating empty class files\n");
 	printf("  --o-path        -  output files to 'path' instead to the current directory\n\n");
@@ -457,13 +465,13 @@ int main(int argc, char* argv[])
 			setNamespace( &argv[i++][0] );
 		
 	if(argv[i][0] != '-')
-		strcpy(Tokken[CLASSNAME], &argv[i++][0] );
+		strcpy(Tokken[COMMANDNAME], &argv[i++][0] );
 	
 	if(hasOption('n'))
 		setNamespace(getName('n'));
 	
 	if(hasOption('c'))
-		Tokken[CLASSNAME]=getName('c');
+		Tokken[COMMANDNAME]=getName('c');
 	
 	if(hasOption('a'))
 		Tokken[NAME]=getName('a');
@@ -481,7 +489,7 @@ int main(int argc, char* argv[])
 		showOptions();
 	
 
-	strcat(&outputDirectory[0],Tokken[CLASSNAME]);
+	strcat(&outputDirectory[0],Tokken[COMMANDNAME]);
 	generateHeaderFile(&outputDirectory[0]);
 	generateCodeFile(&outputDirectory[0],InsertOptions);
 	generateCallerFile(&outputDirectory[0]);
