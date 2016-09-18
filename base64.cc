@@ -34,10 +34,6 @@ const char*	getHeader(enum HEADER part)
 const char* CodeTable = (const char*)&hartKodierteTabelle[0];
 			
 
-//a datatype of size 3byte (used to cast an iterator of steplength 3 byte)
-//typedef struct threeQuart { byte data[3]; } threeQuart;
-
-
 // fills the end of datastring by zeros so it's length will be multiplicate of 4
 byte* fillEndByZeros(byte* pData,unsigned* cbData)
 {
@@ -74,7 +70,7 @@ byte* removeHeader(byte* pData,unsigned *cbData)
 		pData[*cbData]='\0';
 		return &pData[0];
 	}
-//	char seeking = 1;
+
 	while(i<*cbData)
 	{// find and remove end-header...
 		if(pData[++i]=='-')
@@ -131,7 +127,7 @@ byte* removeLineBreaks(byte* pData,unsigned *cbData)
 byte* loadeFile(char* fileName)
 {
 	if(!hasOption('s'))
-		printf("loading file: %s\n\n",fileName);
+		printf("\nloading file: %s\n\n",fileName);
 	_loadedSize=0;
 	
 	byte* dat = readFile(fileName);
@@ -143,7 +139,7 @@ byte* loadeFile(char* fileName)
 			   &_loadedSize);
 			   
 	if(hasOption('v'))
-		printf("loaded Data:\n%s\n\n",(char*)dat);
+		printf("\nloaded Data:\n%s\n\n",(char*)dat);
 	
 	return dat;
 }
@@ -190,46 +186,37 @@ Frame decodeFrame(char* fourChars)
 
 int encodeString(char* dst,const char* src)
 {
-	int lB =  0,
-		iS =  0,
-		iD =  0;
+	int lB,iS,iD;
+	lB=iS=iD=0;
 
-	while(! ( src[iS]=='\0' ) )
-	{
-		if(((iD%64)==0)&&((iD/64)>0))
-			dst[iD+lB++]='\n';
-		
+	while( src[iS]!='\0' )
+	{		
 		uInt(&dst[lB+iD]) = encodeFrame(uInt( &src[iS] )).u32;
 		iD+=4; iS+=3;	
+		
+		if(iD%64 == 0)
+			dst[iD+lB++]='\n';
 	};
 
-	if(((iD%64)==0)&&((iD/64)>0))
-			dst[iD+lB++]='\n';
-		
-    int size = (iD+lB);
-	dst[size]='=';
-	dst[++size] ='\0';
-	return size;
+    iD += lB;
+	dst[iD]='=';
+	dst[++iD] ='\0';
+	return iD;
 }
-
-
 
 int decodeString(char* dst,const char* src)
 {
-	int iS = -4, 
-		iD = -3,
-		iT = 0;
+	int iS = -4; 
+	int	iD = -3;
+	int	iT =  0;
 
 	while (! (iT = ( 
 		asFrame(&dst[iD+=3]) = decodeFrame(&src[iS+=4])
 		    ).i8[3]) );
 
-	dst[iT=iD+(4-iT)]='\0';
-	
-	return iT;
+	dst[iD+=(4-iT)]='\0';
+	return iD;
 }
-
-
 
 
 
@@ -276,7 +263,6 @@ int main(int argc, char **argv)
 		-h                : print this help-message.\n\n");
 		return !hasOption('h'); }
 
-
 	char Mode = hasOption('e') ? 'e'
 			  : hasOption('d') ? 'd'  
 			  : 0;
@@ -286,31 +272,26 @@ int main(int argc, char **argv)
 	if(hasOption('v'))
 		printf("\nusing base64 code table:\n%s\n\n", CodeTable);
 	
-	byte* inputData; 
-	int bytesWriten=0;
+	int bytesWritten,bytesCoded;
 	char outbuffer[4096];
 	
-	bytesWriten = hasOption('t') ? Mode=='e' ? encodeString(&outbuffer[0],getName(Mode))
+	bytesCoded  = hasOption('t') ? Mode=='e' ? encodeString(&outbuffer[0],getName(Mode))
 								 : Mode=='d' ? decodeString(&outbuffer[0],getName(Mode)) 
 							:0	 : Mode=='e' ?   encodeFile(&outbuffer[0],getName(Mode))  
 								 : Mode=='d' ?   decodeFile(&outbuffer[0],getName(Mode)):0;
 	
-	if(hasOption('v'))
-		printf("\nde/en-coded DATA:\n%s\n\n",&outbuffer[0]);
-	
-	streamOut( isModus("stdout")
-	                  ? stdout 
-	                  : fopen(getName('o'),"w"),
-			   &outbuffer[0],
-			   (Mode=='d') * 2 );
-		
 	if((!hasOption('s')) && ( hasOption('v') || (!isModus("stdout"))))
 		printf("\n\n%s\n\n",&outbuffer[0]);
-
+	
+	bytesWritten = streamOut( isModus("stdout")
+	                         ? stdout 
+	                         : fopen(getName('o'),"w"),
+			                  &outbuffer[0],
+			                  (Mode=='d') * 2 );
 	if(!hasOption('s'))
 		printf( "\n\n%i bytes written to %s (with line breaks and headers)\n"
 				"%i byte of data de/en coded (wihout headers or line breaks)\n",
-				bytesWriten, getName('o'), _loadedSize );
+				bytesWritten, getName('o'), bytesCoded );
 	
 	return 0;
 }
@@ -327,15 +308,15 @@ int streamOut(FILE* outstream, byte* data, char writeHeader)
 		fwrite(header[writeHeader++],1,written,outstream);
 	}
 	
-	int outputDataSize = strlen(&data[0]);
-	fwrite(&data[0],1,outputDataSize,outstream);
-	written+=outputDataSize;
+	int size = strlen(&data[0]);
+	fwrite(&data[0],1,size,outstream);
+	written+=size;
 	
 	if(writeHeader>0)
 	{
-		int length = strlen(header[writeHeader]);
-		fwrite(header[writeHeader],1,length,outstream);
-		written+=length;
+		size = strlen(header[writeHeader]);
+		fwrite(header[writeHeader],1,size,outstream);
+		written+=size;
 	}
 	
 	if(!isModus("stdout")){
