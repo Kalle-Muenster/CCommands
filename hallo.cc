@@ -17,7 +17,7 @@
 
 int main(int argc,char**argv)
 {
-	// parse the start command and recognize any given parameters 
+	// parse the command and recognize any given parameters 
 	CommandLineArgs(argc,argv);
 	
 	// an 'advanced' hello world example, 

@@ -44,10 +44,8 @@ const char* tokkenStrings[TOKKEN_COUNT] =
 byte snippedBuffer[2048]={'\0'};
 
 enum SNIPPED_TOKKEN {
-	NONE,
-	HALLOWORLD,
-	
-      SNIPPED_COUNT };
+	NONE,HALLOWORLD,
+SNIPPED_COUNT};
 
 struct Snipped {
 	const byte* tokkenNames[SNIPPED_COUNT]; 

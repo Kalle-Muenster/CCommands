@@ -14,19 +14,19 @@
 #include "commandLiner.h"
 
 
-#define asIntegr(stringo) *(unsigned long*)&stringo[0]
+#define asIntegr(stringo) *(unsigned*)&stringo[0]
 
-typedef struct {
+typedef struct Stringo {
 	union {
-	unsigned long longo;
-	byte 		  strongo[9];
+	unsigned longo;
+	byte 	 strongo[9];
 };} Stringo; 
 
 const Stringo emptyStringo = {
 	"\0\0\0\0\0\0\0\0\0"
 };
 
-char* asString(unsigned long integer)
+char* asString(unsigned integer)
 {
 	((Stringo*)&emptyStringo)->longo = integer;
 	return (char*)&emptyStringo.strongo[0];
@@ -38,7 +38,7 @@ Stringo doStringo(char* toStringo)
 	return *(Stringo*)&toStringo[0];
 }
 
-unsigned long reverse(unsigned long input)
+unsigned reverse(unsigned input)
 {
 	int nuller= -1;
 	Stringo out = {0};
@@ -59,8 +59,7 @@ int main(int argc,char**argv)
 	
 	bool REVERSE = false;
 	
-	if(hasOption('r'))
-	{
+	if(hasOption('r')){
 		REVERSE = true;
 		setOption('r'," reversed");
 	}else{
@@ -71,31 +70,25 @@ int main(int argc,char**argv)
 		printf( "\nwill reverse input %s:\n %i\n",
 				getName('i'), reverse(atol(getName('i'))) );
 	
-	
-	if(hasOption('c'))
-	{	
-		unsigned long value = doStringo(getName('c'));
-		value = REVERSE ? reverse(value) : value;
-                                	
+	if(hasOption('c')) {	
+		unsigned value = doStringo(getName('c'));
+		value = REVERSE ? reverse(value) : value;                          	
 		printf( "\nwill display%s value of string: %s\n %i\n",
 				getName('r'), getName('c'), value );
 	}
 	
-	if(hasOption('v'))
-	{ 
-		unsigned long value = REVERSE ? 
-		  reverse(atol(getName('v'))) : atol(getName('v'));
-				   
+	if(hasOption('v')) { 
+		unsigned value = !REVERSE ? 
+		       atol(getName('v')) : reverse(atol(getName('v')));		   
 		printf( "\nwill reinterprete%s integer %s as strig:\n %s\n",
 				getName('r'), getName('v'), asString(value) );
 	}
 	
-	if(hasOption('h')||(numGum()==1))
-	{
+	if(hasOption('h')||(numGum()==1)) {
 		printf("\nHelper-tool for reversing byte order.\n\nUsage:\n\
-		--i-<QWord>   - will reverse the given integer...\n\
-		--v-<QWord>   - will reinterprete a given integer value to being a string.\n\
-		--c-<QWord>   - will display the integer value of a string (but not reversed!)\n\
+		--i-<DWord>   - will reverse the given integer...\n\
+		--v-<DWord>   - will reinterprete a given integer value to being a string.\n\
+		--c-<4char>   - will display the integer value of a string (but not reversed!)\n\
 		    -r        - this will reverse while converting when using --c or --v conversion.\n\n");
 	}
 }//eof

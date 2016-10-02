@@ -5,15 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_ARGUMENTS (16)
-#define MAX_NAME_LENGTH (128) 
-#define TERMINATOR (MAX_NAME_LENGTH-1)
-#define COMMANDER_BUFFER (MAX_ARGUMENTS*MAX_NAME_LENGTH)
+#include "persistente/CommandLinerSettings.h"
+
+#define TERMINATOR (MAX_NAM_LEN-1)
+#define COMMANDER_BUFFER (MAX_NUM_GUM*MAX_NAM_LEN*2)
 
 char _argumzBuffer[COMMANDER_BUFFER] = {'\0'};
 byte _numberOfArgum = 0;
-char _options[MAX_ARGUMENTS] = {'\0'};
-char* _names[MAX_ARGUMENTS];
+char _options[MAX_NUM_GUM] = {'\0'};
+char* _names[MAX_NUM_GUM];
 char* _executor=NULL;
 short _endOfThePath = 0;
 char* _stateOfTheCommander;
@@ -41,9 +41,9 @@ int CommandLineArgs(int count, char** argv)
 	_argumzBuffer[COMMANDER_BUFFER-1]='\0';
 	_numberOfArgum=0;
 	
-	for(int i=0;i<MAX_ARGUMENTS;i++)
+	for(int i=0;i<MAX_NUM_GUM;i++)
 	{
-		int str = (i*MAX_NAME_LENGTH);
+		int str = (i*MAX_NAM_LEN);
 		_names[i]=&_argumzBuffer[str];
 		_names[i][str+TERMINATOR] = '\0';
 	}
