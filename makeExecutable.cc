@@ -18,7 +18,7 @@
 
 int main(int argc,char**argv)
 {
-    pargumnz(argc,argv);
+    CommandLineArgs(argc,argv);
 		
 	int p=7;
 	char buffer[256]={"tcc.exe   "};
@@ -32,7 +32,7 @@ int main(int argc,char**argv)
 	
 	system(&buffer[0]);
 	p=-1;
-	strcpy(&buffer[0],getName(0));
+	stringCopy(&buffer[0],getName(0));
 	while(buffer[++p]!='\0');
 	while(buffer[--p]!='.');
 	buffer[p]='\0';

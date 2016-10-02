@@ -18,7 +18,7 @@
 int main(int argc,char**argv)
 {
 	// parse the start command and recognize any given parameters 
-	pargumnz(argc,argv);
+	CommandLineArgs(argc,argv);
 	
 	// an 'advanced' hello world example, 
 	// it shows usage of commandLiner.h's parameter handling:

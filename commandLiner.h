@@ -6,7 +6,7 @@ typedef char 			BOOL;
 typedef unsigned char 	byte;
 
 char* 	stringCopy(char* dst,char* src);
-int 	pargumnz(int count, char** argv);
+int 	CommandLineArgs(int count, char** argv);
 int     numGum(void);
 short	hasOption(short option);
 void	setOption(short option, char* name);

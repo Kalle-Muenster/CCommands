@@ -17,19 +17,17 @@ NUMBER_OF_HEADER};
 
 byte data[MAXIMUM_BASE64_DATA_SIZE];
 unsigned _loadedSize=0;
+char _codeTableBuffer[65];
 
 const char* header[NUMBER_OF_HEADER] = 
 			{ "-------BEGIN_BASE64-------\n",
 			"\n-------ENDOF_BASE64-------",
 			  "-----BEGIN_PLAIN_TEXT-----\n",
-			"\n-----ENDOF_PLAIN_TEXT-----\n" };
+			"\n-----ENDOF_PLAIN_TEXT-----" };
 
 const char* hartKodierteTabelle = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 		   
-char _codeTableBuffer[65];
 
-const char*	getHeader(enum HEADER part)
-			{ return header[part]; }
 
 const char* CodeTable = (const char*)&hartKodierteTabelle[0];
 			
@@ -236,13 +234,12 @@ int decodeFile(char* dst,const char* inputFileName)
 //main kram...
 const char* 	loadeCode(void);
 byte* 			readFile(char* fileName);
-const char*		getHeader(enum HEADER part);
 int 			streamOut(FILE*,byte*,char);
 
 
 int main(int argc, char **argv)
 {
-	pargumnz(argc,argv);
+	CommandLineArgs(argc,argv);
 
 	if(!hasOption('o'))
 		setOption('o',"stdout");
@@ -252,16 +249,19 @@ int main(int argc, char **argv)
 	
 	if( ((!hasOption('e')) && (!hasOption('d'))) || hasOption('h'))
 	{ 
-		printf("\nUsage:\n\nbase64 [options] <[--e/--d]-SourceFile> [--o-OutputFile] \n\n\noptions:\n\n\
-		--e-<input>       : encode: file <input> to base64.\n\
-		--d-<input>       : decode: file <input> from base64 back to Utf-8\n\
-		--o-<output>      : writes the ouput to file <output> instead to stdout.\n\
-		--c-<codetable>   : define own coding table (64 chars + terminating '=' sign!)\n\
-		-t                : interpret -d/-e/-c as string-input (rather then filenames).\n\
-		-v                : print verbose details to stdout.\n\
-		-s                : silent de-/en-coding.\n\
-		-h                : print this help-message.\n\n");
-		return !hasOption('h'); }
+		printf("\nUsage:\n\n");
+		printf("    base64 [options] <[--e/--d]-SourceFile> [--o-OutputFile]\n\n\n");
+		printf("    options:\n\n");
+		printf("      --e-<input>       : encode: file <input> to base64.\n");
+		printf("      --d-<input>       : decode: file <input> from base64 back to Utf-8\n");
+		printf("      --o-<output>      : writes the ouput to file <output> instead to stdout.\n");
+		printf("      --c-<codetable>   : define own coding table (64 chars + terminating '=' sign!)\n");
+		printf("       -t               : interpret -d/-e/-c as string-input (rather then filenames).\n");
+		printf("       -v               : print verbose details to stdout.\n");
+		printf("       -s               : silent de-/en-coding.\n");
+		printf("       -h               : print this help-message.\n\n");
+		return !hasOption('h');
+	}
 
 	char Mode = hasOption('e') ? 'e'
 			  : hasOption('d') ? 'd'  
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
 							:0	 : Mode=='e' ?   encodeFile(&outbuffer[0],getName(Mode))  
 								 : Mode=='d' ?   decodeFile(&outbuffer[0],getName(Mode)):0;
 	
-	if((!hasOption('s')) && ( hasOption('v') || (!isModus("stdout"))))
+	if((!hasOption('s')) && (!isModus("stdout")))
 		printf("\n\n%s\n\n",&outbuffer[0]);
 	
 	bytesWritten = streamOut( isModus("stdout")

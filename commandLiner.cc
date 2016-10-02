@@ -5,14 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_ARGUMENTS (16)
 #define MAX_NAME_LENGTH (128) 
-#define TERMINATOR (127)
-#define COMMANDER_BUFFER 2048
+#define TERMINATOR (MAX_NAME_LENGTH-1)
+#define COMMANDER_BUFFER (MAX_ARGUMENTS*MAX_NAME_LENGTH)
 
 char _argumzBuffer[COMMANDER_BUFFER] = {'\0'};
 byte _numberOfArgum = 0;
-char _options[8] = {'\0'};
-char* _names[8];
+char _options[MAX_ARGUMENTS] = {'\0'};
+char* _names[MAX_ARGUMENTS];
 char* _executor=NULL;
 short _endOfThePath = 0;
 char* _stateOfTheCommander;
@@ -25,7 +26,7 @@ char* stringCopy(char* dst,char* src)
 	return &dst[0];
 }
 	 
-int pargumnz(int count, char** argv)
+int CommandLineArgs(int count, char** argv)
 {
 	_executor=argv[0];
 	
@@ -40,7 +41,7 @@ int pargumnz(int count, char** argv)
 	_argumzBuffer[COMMANDER_BUFFER-1]='\0';
 	_numberOfArgum=0;
 	
-	for(int i=0;i<8;i++)
+	for(int i=0;i<MAX_ARGUMENTS;i++)
 	{
 		int str = (i*MAX_NAME_LENGTH);
 		_names[i]=&_argumzBuffer[str];

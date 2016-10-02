@@ -23,7 +23,7 @@ the numnber of arguments passed and return it as ERRORLEVEL.\n\n");
 
 int main(int argc, char** argv)
 {
-	pargumnz(argc,argv);
+	CommandLineArgs(argc,argv);
 
 //	showOptions();
 	

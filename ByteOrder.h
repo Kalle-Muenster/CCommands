@@ -1,18 +1,18 @@
-#! /usr/bin/tcc -run
 /*///////////////////////////////////////////////////////////*\
 ||                                                           ||
-||     File:      makeExecutable.h                           ||
+||     File:      ByteOrder.h                                ||
 ||     Author:    Kalle                                      ||
-||     Generated: by ClassFileGenerator v0.0                 ||
+||     Generated: by ClassFileGenerator v0.1                 ||
 ||                                                           ||
 \*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/
-#ifndef using_makeExecutable
-#define using_makeExecutable makeExecutable.cc
-#include "makeExecutable.c"
+#ifndef using_ByteOrder
+#define using_ByteOrder ByteOrder.cc
 
-#define	F_OK 0
+
+   		//Todo:...
+
 
 #ifdef _OnTheFly_
-#include "makeExecutable.cc"
+#include "ByteOrder.cc"
 #endif
 #endif

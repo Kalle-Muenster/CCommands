@@ -7,9 +7,16 @@
 #include <string.h>
 #include <time.h>
 
-void generateHeaderFile(char*);
-void generateCodeFile(char*,char);
-void generateCallerFile(char*);
+void generateFile(const byte*,char*);
+void generateFileConditionalInsert( const byte*,const byte*,
+							        const byte*,char, char* );
+							   
+void(*generateHeaderFile)(char*);
+void(*generateCodeFile)(char*,char);
+void(*generateExtraFile)(char*);
+
+
+
 void getCurrentDate(byte*);
 int  parseText(const byte*,byte*);
 
@@ -18,8 +25,8 @@ typedef struct tm Date;
 enum TOKKEN
 {
 	COMMANDNAME,
+	AUTHOR,
 	DATE,
-	NAME,
 	EXTENSION,
 	SNIPPED,
 
@@ -28,47 +35,19 @@ TOKKEN_COUNT};
 const char* tokkenStrings[TOKKEN_COUNT] =
 {
 	"CommandName",
+	"Author",
 	"Date",
-	"Name",
 	"Extension",
 	"Snipped"
 };
 
 byte snippedBuffer[2048]={'\0'};
 
-const byte Snipped_HalloWorld[]={
-"	// an 'advanced' hello world example,\n"
-"	// it shows usage of commandLiner.h's parameter handling:\n"
-"	//\n"
-"	// the user can define additional individuals to let them greet:\n"
-"	//    - by passing raw parameters\n	//\n"
-"	// and it optionally says 'bye bye' also:\n"
-"	//    - by passing switch '-b'\n	//\n"
-"	// and to choose the phrase it will use for saying bye:\n"
-"	//    - by passing option '--b-<byePhrase>'\n\n\n"
-"	// add a default individuum to greet if no others where passed\n"
-"    setOption('w',\"World\");\n\n"
-"	// output any recognized userinputs when -v (verbose) was passed also\n"
-"    if(hasOption('v'))\n"
-"        showOptions();\n\n"
-"	// look if any additional idividuums to greet where defined:\n"
-"    if(numGum())// filter out options, like '-b' or '-v' switchs.\n"
-"        for(int i=0;i<numGum();i++)// thees don't need greetings.\n"
-"            if( isModus(getNameByIndex(i))\n"
-"            && !nameWasSwitched(getNameByIndex(i)))\n"
-"                printf(\"hallo %s\\n\",getNameByIndex(i));\n\n"
-"	// greet the default 'world' individuum\n"
-"	// we just defined before\n"
-"    printf(\"Hallo %s\\n\",getName('w'));\n\n"
-"	// say 'bye' if '-b' switch was enabled\n"
-"    if(hasOption('b')) // use the user choosen phrase,\n"
-"        printf(\"...%s\",getName('b')[0] ?// or if none, use the default\n"
-"                          getName('b') : \"bye bye!\\n\" );\n\n"
-"	// retun some greetings to the system if '-b' switch enabled.\n"
-"	return hasOption('b');\n\n"
-};
-
-enum SNIPPED_TOKKEN {NONE,HALLOWORLD,SNIPPED_COUNT};
+enum SNIPPED_TOKKEN {
+	NONE,
+	HALLOWORLD,
+	
+      SNIPPED_COUNT };
 
 struct Snipped {
 	const byte* tokkenNames[SNIPPED_COUNT]; 
@@ -86,65 +65,6 @@ char _generaterBuffer[2048] = {'\0'};
 
 const char* templateStuecke[4];
 
-const byte InfoHeader[] = {
-		"/*///////////////////////////////////////////////////////////*\\\n"
-		"||                                                           ||\n"
-		"||     File:      $43^CommandName^^Extension^$||\n"
-		"||     Author:    $43^Name^$||\n"
-		"||     Generated: $43^Date^$||\n"
-		"||                                                           ||\n"
-		"\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
-		"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/\n\0"
-};
-
-const byte HeaderFile[] = {
-"#ifndef using_^CommandName^\n"	
-"#define using_^CommandName^ ^CommandName^.cc\n"
-"\n"
-"\n"
-"   		//Todo:...\n"
-"\n"
-"\n"
-"#ifdef _OnTheFly_\n"
-"#include \"^CommandName^.cc\"\n"
-"#endif\n"
-"#endif\n"
-};
-
-const byte CodeFile[] = {
-"#ifndef _OnTheFly_ \n"
-"#include \"^CommandName^.h\"\n"
-"#endif \n"
-"\n"
-"// regular includes here: \n"
-"#include <tcclib.h>\n"
-"#include \"commandLiner.h\"\n"
-"\n"
-"//... ...\n"
-"\n"
-"int main(int argc,char**argv)\n"
-"{\n"
-"    pargumnz(argc,argv);\n"
-"\n"
-"	// Todo: implement command\n"
-"\n"
-};
-
-const byte CodeFileClose[] = {
-"}//eof\n"
-};
-	
-const byte CallerFile[] = {
-"#define _OnTheFly_\n"
-"#include \"^CommandName^.h\"\n"
-"int main(int argc,char** argv);\n"
-};
-
-const byte* getTemplate(int templateType)
-{
-	return InfoHeader;
-}
-
 enum SPACE
 {
 	BEGIN,
@@ -160,7 +80,11 @@ char outputDirectory[128] = {'\0'};
 byte _tokkenBuffer[(TOKKEN_COUNT+SPACE_COUNT)*128] = {'\0'};
 byte* Tokken[TOKKEN_COUNT];
 
-
+typedef enum INSERT_OPTIONS {
+	NONE = 0,
+	SNIPPED = 1,
+	NO_INFO = 2  
+} INSERT_OPTIONS;
 
 byte* TEMPLATE_NAMESPACE_BEGIN =
 {
@@ -173,8 +97,6 @@ byte* TEMPLATE_NAMESPACE_END =
 	"\n}//end of ^Space.NAME^\n"
 };
 
-
-
 struct Space
 {
 	const byte* nameSrings[SPACE_COUNT];
@@ -184,32 +106,40 @@ struct Space
 	{ "", "", "", "", "" }
 };
 
+
+const byte InfoHeader[] = {
+		"/*///////////////////////////////////////////////////////////*\\\n"
+		"||                                                           ||\n"
+		"||     File:      $43^CommandName^^Extension^$||\n"
+		"||     Author:    $43^Author^$||\n"
+		"||     Generated: $43^Date^$||\n"
+		"||                                                           ||\n"
+		"\\*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"
+		"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/\n\0"
+};
+#include "FileTemplates/HalloWorldSnippet.cc"
+#include "FileTemplates/CommandFileTemplate.cc"
+#include "FileTemplates/ClassFileTemplate.cc"
+const byte* getTemplate(int templateType)
+{
+	switch(templateType)
+	{
+		case INFO_HEADER: return &InfoHeader[0];
+		case HEADER_FILE: return &HeaderFile[0];
+		case CODE_FILE:   return &CodeFile[0];
+		case CALLER_FILE: return &CallerFile[0];
+		case CLASS_HEADER:return &ClassHeader[0];
+		case CLASS_CODE:  return &ClassCode[0];
+		case CLASS_TESTS: return &ClassTests[0];
+	}
+}
+
 void assignTokken(byte** structure, int tkkn,const byte* stringo)
 {
 	strcpy(structure[tkkn],stringo);
 }
 
-void initialize(void)
-{
-	for(int i = 0; i < TOKKEN_COUNT; i++)
-		Tokken[i] = &_tokkenBuffer[i*128];
-	
-	for(int i = 0; i < SPACE_COUNT; i++)
-		Space.Tokken[i] = &_tokkenBuffer[(int)(i+TOKKEN_COUNT)*128];
-	
-	Snipped.Tokken[NONE] = &snippedBuffer[0];
-	Snipped.Tokken[NONE][0]='\0';
-	
-	Snipped.Tokken[HALLOWORLD] = &snippedBuffer[MAX_NAME_LENGTH];
-	strcpy(Snipped.Tokken[HALLOWORLD],&Snipped_HalloWorld[0]);
-	
-	byte** pTkkn = &Tokken[0];
-	assignTokken(pTkkn,COMMANDNAME,"HalloWorld");
-	assignTokken(pTkkn,NAME,"Kalle");
-	assignTokken(pTkkn,DATE,"by ClassFileGenerator v0.1");
-	assignTokken(pTkkn,EXTENSION,".cpp");
-	assignTokken(pTkkn,SNIPPED,"^Snipped.HalloWorld^");
-}
+
 
 int 
 containedTokkenIndex(const byte* prop)
@@ -242,20 +172,23 @@ int containsSnippedTokken(const byte* txt)
 	return -1;
 }
 
-void showHelpScreen(void)
+int showHelpScreen(void)
 {
 	printf("\nusage: \n\n   options:\n\n");
-	printf("   -d             -  write current date to info\n");
-	printf("   -s             -  silent (no feedback on stdout)\n");
-	printf("  --c-CommandName -  use string 'CommandName' for COMMANDNAME\n");
-//	printf("  --n-namespace   -  surround Class by namespace 'namespace'\n");
-	printf("  --a-author      -  set 'name' used for Author in info\n");
-	printf("   -e             -  use 'HalloWorld' example instead of generating empty class files\n");
-	printf("  --o-path        -  output files to 'path' instead to the current directory\n\n");
+	printf("  --o-path         -  output files to 'path' (otherwhise current directory would be used)\n");
+	printf("  --a-author       -  set 'name' used for Author in info\n");
+	printf("  --c-command      -  use string 'command' for COMMANDNAME\n");
+	printf("      -n           -  creates a C++ class instead of a TCC command\n");
+	printf("     --n-namespace -  surround C++ class by namespace 'namespace'\n");
+	printf("      -d           -  write current date to info\n");
+	printf("      -e           -  generate 'HalloWorld' example instead of empty class files\n");
+	printf("      -s           -  silent (no feedback on stdout)\n\n");
 	printf("or without dashes, given:\n\n");
 	printf("   one parameter  :  parameter will be used as <ClassName>\n");
 	printf("   two parameters :  first parameter will be <Namespace>, \n");
 	printf("                     second will be <ClassName>\n\n\n");
+	
+	return hasOption('h') ? 0 : 255;
 }
 
 void setNamespace(const byte* nameSpace)
@@ -340,11 +273,7 @@ parseText(const byte* text,byte* parsed)
 	return parsedPosition;
 }
 
-typedef enum INSERT_OPTIONS {
-	NONE = 0,
-	SNIPPED = 1,
-	NO_INFO = 2  
-} INSERT_OPTIONS;
+
 
 void
 generateFile(const byte* text, char* fileName)
@@ -409,49 +338,46 @@ generateFileConditionalInsert( const byte* textA,
 }
 
 
-
-void generateHeaderFile(char* fileName)
+void initialize(void)
 {
-	char buffer[128]={'\0'};
-	strcpy(Tokken[EXTENSION],".h");
-	sprintf(&buffer[0],"%s%s",fileName , Tokken[EXTENSION]);
-	generateFile( HeaderFile, &buffer[0] );
-}
-
-void generateCodeFile(char* fileName,char insertSnippet)
-{
-	char buffer[128]={'\0'};
-	strcpy(Tokken[EXTENSION],".cc");
-	sprintf(&buffer[0],"%s%s",fileName , Tokken[EXTENSION]);
-	generateFileConditionalInsert( &CodeFile[0],&CodeFileClose[0],
-								   &Snipped_HalloWorld[0],
-								   insertSnippet,&buffer[0] );
-}
-
-void generateCallerFile(char* fileName)
-{
-	char buffer[128]={'\0'};
-	strcpy(Tokken[EXTENSION],".c");
-	sprintf(&buffer[0],"%s%s",fileName , Tokken[EXTENSION]);
-	generateFileConditionalInsert( "#!/usr/bin/tcc -run\n", 
-								   CallerFile, InfoHeader, 
-								   NO_INFO, &buffer[0] );
+	for(int i = 0; i < TOKKEN_COUNT; i++)
+		Tokken[i] = &_tokkenBuffer[i*128];
+	
+	for(int i = 0; i < SPACE_COUNT; i++)
+		Space.Tokken[i] = &_tokkenBuffer[(int)(i+TOKKEN_COUNT)*128];
+	
+	Snipped.Tokken[NONE] = &snippedBuffer[0];
+	Snipped.Tokken[NONE][0]='\0';
+	
+	Snipped.Tokken[HALLOWORLD] = &snippedBuffer[MAX_NAME_LENGTH];
+	strcpy(Snipped.Tokken[HALLOWORLD],&HalloWorldSnippet[0]);
+	
+	byte** pTkkn = &Tokken[0];
+	assignTokken(pTkkn,COMMANDNAME,"HalloWorld");
+	assignTokken(pTkkn,AUTHOR,"Kalle");
+	assignTokken(pTkkn,DATE,"by CommandGenerater v0.1");
+	assignTokken(pTkkn,EXTENSION,".cpp");
+	assignTokken(pTkkn,SNIPPED,"^Snipped.HalloWorld^");
+	
+	if(hasOption('n'))
+		InitClassGenerater();
+	else
+		InitCommandoGenerater();
 }
 
 void getCurrentDate(byte* dst)
 {
+	sprintf(dst,"heute");
 //	Date* t = (Date*)time(NULL);
 //	strftime((char*)dst,31,"%d.%m.%Y - %H:%M",t);
 }
 
 int main(int argc, char* argv[])
 {
-	if (argc <= 1)
-	{ showHelpScreen();	return 0; }
-
-	initialize();
+	CommandLineArgs(argc,argv);
 	
-	pargumnz(argc,argv);
+	if(!numGum()||hasOption('h')) 
+		return showHelpScreen();
 
 	SILENT_MODE = hasOption('s');
 	char InsertOptions=NONE;
@@ -459,25 +385,33 @@ int main(int argc, char* argv[])
 	getcwd(&outputDirectory[0],128);
 	strcat(&outputDirectory[0],"\\");
 	
+	// handle raw input if 1 or 2 raw arguments given:
 	int i = 1;
 	if(argc > 2)
-		if(argv[2][0] != '-')
-			setNamespace( &argv[i++][0] );
+		if(argv[2][0] != '-') 
+			setOption('n',&argv[i++][0]);
 		
 	if(argv[i][0] != '-')
-		strcpy(Tokken[COMMANDNAME], &argv[i++][0] );
+		setOption('c',&argv[i++][0]);
 	
+	initialize();
+	
+	strcpy(Tokken[DATE],"by Command Generater v.0.1");
+	strcpy(Tokken[AUTHOR],"unknown");
+	
+	
+	// handle by commandLiner if tagged input given:
 	if(hasOption('n'))
 		setNamespace(getName('n'));
 	
 	if(hasOption('c'))
-		Tokken[COMMANDNAME]=getName('c');
+		Tokken[COMMANDNAME] = getName('c');
 	
 	if(hasOption('a'))
-		Tokken[NAME]=getName('a');
+		Tokken[AUTHOR] = getName('a');
 	
 	if(hasOption('e'))
-		InsertOptions=SNIPPED;
+		InsertOptions = SNIPPED;
 	
 	if(hasOption('o'))		
 		sprintf(&outputDirectory[0],"%s/",getName('o'));
@@ -488,9 +422,9 @@ int main(int argc, char* argv[])
 	if(hasOption('v'))
 		showOptions();
 	
-
+	// generate the files:
 	strcat(&outputDirectory[0],Tokken[COMMANDNAME]);
 	generateHeaderFile(&outputDirectory[0]);
 	generateCodeFile(&outputDirectory[0],InsertOptions);
-	generateCallerFile(&outputDirectory[0]);
+	generateExtraFile(&outputDirectory[0]);
 }
