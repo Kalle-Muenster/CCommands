@@ -1,12 +1,12 @@
 #!/usr/bin/tcc -run -w
 /*///////////////////////////////////////////////////////////*\
 ||                                                           ||
-||     File:      byteOrder.c                                ||
+||     File:      persist.c                                  ||
 ||     Author:    Kalle                                      ||
-||     Generated: by ClassFileGenerator v0.1                 ||
+||     Generated: by Command Generater v.0.1                 ||
 ||                                                           ||
 \*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/
-#define _OnTheFly_ byteOrder
-#define byteOrder ""
-#include ".byteOrder.h"
+#define persist ""
+#define _OnTheFly_ persist
+#include ".persist.h"
 int main(int argc,char** argv);
