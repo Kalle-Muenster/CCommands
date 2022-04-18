@@ -1137,33 +1137,44 @@ int tempf(const char* fmt, const char* name) {
     return (int)strlen(c.running->reserved);
 }
 
-cmLn unQuoted(cmLn arg)
-{
-    const int end = (int)strlen(arg)-1;
-    if( arg[0]=='\"' && arg[end] == '\"') {
-        setTemp( arg+1 )[end-1] = '\0';
-        return getTemp();
+cmLn unQuoted( cmLn arg )
+{ 
+    if( isQuoted( arg ) ) {
+		const int cut = (int)strlen(arg)-2;
+		int renew = indexOfName( arg );
+        setTemp( arg+1 )[cut] = '\0';
+		if (renew >= 0) return strcpy( c.running->names[renew], getTemp() );
+        else return getTemp();
     } else {
         return arg;
     }
 }
+
 cmLn toQuoted(cmLn arg)
 {
-    const int end = (int)strlen(arg)-1;
-    if( arg[0]!='\"' && arg[end]!='\"' ) {
-        char* chk = (char*)arg;
-        char* out = setTemp("\"")+1;
-        *out=*chk;
-        while( *++out = *++chk ) {
-            if(*chk=='\"') {
-               *out++='\\';
-               *out='\"'; }
-        } *out++='\"';
-        *out='\0';
-        return getTemp();
-    } else {
-        return arg;
-    }
+	cmBl isqued = isQuoted( arg );
+	int renew = indexOfName( arg );
+    char* chk = (char*)arg;
+    char* out = setTemp("\"")+1;
+    if ( *chk == '"' ) {
+		 *out++ = '\\';
+	} *out = *chk;
+    while( *++out = *++chk ) {
+        if(*out=='"') {
+           *out++ = '\\';
+		   *out = '"'; 
+		}
+	} *out++ = '"';
+	*out = '\0';
+    return ( renew >= 0 )
+	     ? strcpy( c.running->names[renew], getTemp() )
+	     : getTemp();
+}
+
+cmBl isQuoted(cmLn arg)
+{
+	const int end = (int)strlen(arg)-1;
+	return ( arg[0]=='\"' && arg[end]=='\"' );
 }
 
 uint toSplitList(char* sepList, char* fromTo)

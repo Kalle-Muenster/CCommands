@@ -14,8 +14,10 @@
 #include "./eszentielle/.CommandlinerSetting.h"
 
 #ifdef _DEBUG
+#ifndef COMMANDLINER_DISABLE_DEBUG
 #undef  DEBUG
 #define DEBUG (1)
+#endif
 #endif
 #ifndef DEBUG
 #define DEBUG (0)
@@ -212,6 +214,7 @@ COMMANDLINER_API cmLn    parameterCopy( char* dst, cmLn src );
 COMMANDLINER_API uint    stringCompare(cmLn,cmLn);
 COMMANDLINER_API cmLn    unQuoted(cmLn);
 COMMANDLINER_API cmLn    toQuoted(cmLn);
+COMMANDLINER_API cmBl    isQuoted(cmLn);
 
 COMMANDLINER_API void*   getDingens( const char* named );
 COMMANDLINER_API void    addDingens( const char* named, void* dings, void(*bumms)(void) );

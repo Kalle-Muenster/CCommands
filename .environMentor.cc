@@ -740,12 +740,11 @@ void setMacroNum(const char* name, int value)
 void setMacroStr(const char* name, const char* value)
 {
    #if defined(__TINYC__)
-    char buffer[strlen(value)+2];
+    char buffer[strlen(value)+4];
    #else
-    char* buffer = (char*)malloc(strlen(value)+2);
+    char* buffer = (char*)malloc(strlen(value)+4);
    #endif
-    sprintf( &buffer[0], "\"%s\"", value );
-    setMacroRaw( name, &buffer[0] );
+    setMacroRaw( name, strcpy( &buffer[0], toQuoted(value) ) );
    #if !defined(__TINYC__)
     free(buffer);
    #endif
@@ -1093,14 +1092,14 @@ printf("... exporting macros...\n");
 #endif
     for(int i=0;i<NUMBER_OF_MACROS;i++)
         setVariable( MACRO_NAMES[i],
-                     reflect(MACRO_NAMES[i]) );
+                     unQuoted(reflect(MACRO_NAMES[i])) );
 #if DEBUG > 0
 printf("... exporting features...\n");
 #endif
     if(hasFeatures())
         for(int i=0;i<NUMBER_OF_FEATURES;i++)
             setVariable( FEATURE_NAMES[i],
-                         reflect(FEATURE_NAMES[i]) );
+                         unQuoted(reflect(FEATURE_NAMES[i])) );
 
 system( CONSOLA " \"echo.\"" );
 }
@@ -1119,7 +1118,7 @@ printf("... exporting macros...\n");
 #endif
     for(int i=0;i<NUMBER_OF_MACROS;i++)
         setVariable( MACRO_NAMES[i],
-                     reflect(MACRO_NAMES[i]) );
+                     unQuoted(reflect(MACRO_NAMES[i])) );
     }
     if((scope==LOCAL)||(scope==DISABLED)) {
 #if DEBUG > 0
@@ -1128,7 +1127,7 @@ printf("... exporting features...\n");
     if(hasFeatures())
         for(int i=0;i<NUMBER_OF_FEATURES;i++)
             setVariable( FEATURE_NAMES[i],
-                         reflect(FEATURE_NAMES[i]) );
+                         unQuoted(reflect(FEATURE_NAMES[i])) );
     }
 system( CONSOLA " \"echo.\"" );
 }
