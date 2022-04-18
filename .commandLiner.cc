@@ -776,7 +776,8 @@ cmLn getModusNumber( uint number )
     return c.running->names[ idxOfModusNumber(number) ];
 }
 
-
+// get the n'th modus given (counterpart to getModusNumber()
+// but the otherway round 
 int modusNumber( cmLn mode ) {
     int modex=0;
     for(int i=0;i<c.running->numgum;++i) {

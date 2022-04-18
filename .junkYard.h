@@ -76,7 +76,7 @@ COMMANDLINER_EXTERN_C
     JUNKYARD_API yard*   junk_getYard(void);
 
     // installs a parameterless function which then automatically will be called
-    // on dropAllChunks() and/or on dropCycle() calls on the junk yard.
+    // on cycle() and drop() calls on the junk yard.
     JUNKYARD_API void    junk_installCleansener( cmDtCall );
 
     // allocate cbSize byte on raw memory which automatically will be 'cleansened'

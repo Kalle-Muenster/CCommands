@@ -14,7 +14,7 @@
 
 #include <stdlib.h>
 #if SYSTEM==WIN
-    #include <process.h>
+#include <process.h>
 #endif
 #include <libtcc.h>
 

@@ -22,7 +22,7 @@
   int USAGE(tokken)
   {
   Synopsis("--<h|b>-<size[,count]> [options]");
-    printf("Options:\n\
+    printf("Options:\n\n\
   --h-<size[,count]> :  created tokken consisting from <size> count on hex digits\n\
   --b-<size[,count]> :  created tokken consisting from <size> count on base64 digits\n\
                      :  ( adding [,count] creates a big bunch of <count> tokkens at once! )\n\
@@ -33,10 +33,9 @@
                          'tokken --h-32,<count> --g-8-4-4-4-12'\n\
   --o-<filename>     :  write output into a file instead of generating stdout\n\
   -v,--verbose       :  output more detailed creation info\n\
-  -?,--help          :  display this help message screen\n\n\
-   ");
+  -?,--help          :  display this help message screen\n\n");
 #ifdef using_environMentor
-   printf("Persists:\n\
+   printf("Persists:\n\n\
   HEXSTRING_UPPERCASE (1/0) : Controls character caseing of generated hexdigits\n\n");
 #endif
     return CheckForError()
