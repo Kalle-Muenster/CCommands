@@ -384,8 +384,11 @@ char isAllowedCharacter( char check )
 // encodes one frame (first 3 byte of 'frame' to 4 chars base64-data)
 b64Frame base64_encodeFrame( b64Frame frame )
 {
+   #if BASE64_REVERSED_ORDER == 0
+    frame.u8[3] = 0u;
+   #endif
     uint threeByte = frame.u32;
-    frame.u32 = 0;
+    frame.u32 = 0u;
    #if BASE64_REVERSED_ORDER
     threeByte = byteOrder_reverse32( threeByte << 8 );
     for( uint i=3; i<EMPTY; --i ) {
@@ -400,11 +403,12 @@ b64Frame base64_encodeFrame( b64Frame frame )
 // decode one frame (4 chars base64-data to 3 byte binary data)
 b64Frame base64_decodeFrame( b64Frame fourChars )
 {
-    b64Frame bin3 = {0};
-    for( int i=0; i<4; ++i ) {
+    b64Frame bin3;
+	bin3.u32 = 0u;
+    for( int i = 0; i < 4; ++i ) {
         if( fourChars.i8[i] == '=' ) {
             bin3.u32 += ( 64 << SixBitIehShift(i) );
-            bin3.i8[3]=(4-i); break;
+            bin3.i8[3] = (char)(4-i); break;
         } BASE64_SELECTED_ALGORYTHM {
             bin3.i8[3] = (char)setError(
                 "invalid base64 data", 4-i );
@@ -419,29 +423,70 @@ b64Frame base64_decodeFrame( b64Frame fourChars )
     return bin3;
 }
 
+
+#if BASE64_WITH_LINEBREAKS > 0
+#define IncrementAndLineBreak if((iD+=4)%64==0)dst[iD+lB++]='\n'
+#else
+#define IncrementAndLineBreak iD+=4
+#endif
+
 // encode data batzen src to base64 string dst... (returns encoded size)
 int base64_encodeData( char* dst, const byte* src, unsigned cbSrc )
 {
-    uint lB= 0;
-    uint iD= 0;
-    uint iS=((cbSrc+3)%3); // is adding 3 neccessary?
-    if( iS ) cbSrc+=(3-iS);
-    iS = 0;
+    uint lB = 0; uint iD = 0;
+    uint iM = cbSrc % 3;
+    uint iS = cbSrc - iM;
+	b64Frame end = {0};
+	while ( iS < cbSrc ) {
+		end.u8[lB++] = src[iS++];
+	} cbSrc -= iM;
+	iS = lB = 0;
 
-    do { asFrame( &dst[lB+iD] ) =
-            base64_encodeFrame( asFrame( &src[iS] ) );
-        iD += 4;
-   #if BASE64_WITH_LINEBREAKS > 0
-         if( iD%64 == 0 )
-            dst[iD+lB++] = '\n';
-   #endif
+    do { asFrame( &dst[lB+iD] ) = base64_encodeFrame( asFrame( &src[iS] ) );
+       IncrementAndLineBreak;
     } while ( cbSrc > (iS+=3) );
-
-    dst[(iD += lB)]='=';
-    dst[iD+1]='\0';
-    DEBUGLOG(dst)
+	
+	iD += lB;
+    switch (iM) {
+	case 0: {
+	#if BASE64_REVERSED_ORDER == 0
+	    dst[iD++] = CodeTable[0];
+	#else
+		dst[iD++] = '=';
+	#endif
+		dst[iD++] = '=';
+		dst[iD++] = '=';
+		dst[iD++] = '=';
+		dst[iD++] = '\0';
+		} break;
+	case 1: {
+		end = base64_encodeFrame( end );
+		end.i8[3] = '=';
+		*(b64Frame*)&dst[iD] = end;
+		iD += 4;
+		dst[iD] = '\0';
+		} break;
+	case 2: {
+		end = base64_encodeFrame( end );
+		*(b64Frame*)&dst[iD] = end;
+		iD += 4;
+	#if BASE64_REVERSED_ORDER
+		dst[iD++] = '=';
+	#else 
+		dst[iD++] = CodeTable[0];
+		dst[iD++] = '=';
+		dst[iD++] = '=';
+		dst[iD++] = '=';
+	#endif
+		dst[iD++] = '\0';
+		} break;
+	}
+    DEBUGLOG( dst )
     return iD;
 }
+#undef IncrementAndLineBreak
+
+#undef IncrementAndLineBreak
 
 // decode base64 string 'src' to byte data 'dst'... (returns decoded size)
 int base64_decodeData( byte* dst, const char* src )
@@ -449,13 +494,14 @@ int base64_decodeData( byte* dst, const char* src )
     int iS = -4;
     int iD = -3;
     int iT =  0;
-
     while (! (iT = (
         asFrame( &dst[iD+=3] ) = base64_decodeFrame( asFrame( &src[iS+=4] ) )
-            ).i8[3]) );
+            ).i8[3] ) );
 
-    dst[iD+=(4-iT)]='\0';
-    return iD;
+	// todo: do not null-terminate
+   // if (iT == 4) dst[iD] = '\0';
+   // else dst[ iD -= iT ] = '\0';
+    return iD+=1; 
 }
 
 // encodes contents of file 'fileName' into the pool (returns encoded size)
@@ -554,7 +600,7 @@ int base64_encodeFileToFile( FILE* dst, FILE* src )
     dat.u32 = 0;
     cpos = 0;
     int lb = 0;
-    while( size>2 ) {
+    while( size > 2 ) {
         size -= (int)fread( &dat, 1, 3, src );
         dat = base64_encodeFrame( dat );
         cpos += (int)fwrite( &dat, 1, 4, dst );
@@ -563,11 +609,30 @@ int base64_encodeFileToFile( FILE* dst, FILE* src )
             lb += (int)fwrite( "\n", 1, 1, dst );
         }
    #endif
-    } if( size )
-        lb += (int)fwrite("=",1,size,dst);
-    else
-        lb += (int)fwrite("=",1,4,dst);
-    return cpos+lb;
+    } if( size ) {
+		dat.u32 = 0;
+		fread( &dat, 1, size, src );
+		dat = base64_encodeFrame( dat );
+		if (size == 1) {
+			fwrite(&dat.u8[0],1,3,dst);
+		    fwrite("=",1,1,dst);
+		} else {
+			fwrite(&dat.u8[0],1,4,dst);
+			dat.u32 = *(uint*)"====";
+	#if BASE64_REVERSED_ORDER == 0
+			dat.i8[0] = CodeTable[0];
+	#endif
+			fwrite(&dat.u8[0],1,4,dst);
+			lb += 4;
+		}
+    } else {
+		dat.u32 = *(uint*)"====";
+   #if BASE64_REVERSED_ORDER == 0
+		dat.i8[0] = CodeTable[0];
+   #endif
+		fwrite(&dat.u8[0],1,4,dst);
+    }
+	return cpos + lb + 4;
 }
 
 // decode base64 content from file src to file dst

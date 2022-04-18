@@ -58,10 +58,10 @@ extern "C" {
 
 	typedef enum CRYPS64_API CRYPS64 {
 		CRYPST = '?',
-		BASE64 = FOURCC('b','6','4','\0'),
-		BINARY = FOURCC('b','i','n','\0'),
+		BASE64 = 0x40u, //FOURCC('b','6','4','\0'), // try to see if possible if changing value to '0x40' (B64_FLAG) is possible without causing any evil side effects
+		BINARY = 0x10u, //FOURCC('b','i','n','\0'), // try to see if possible if changing value to '0x10' (BIN_FLAG) is possible without causing any evil side effects
 		CONTXT_ERROR = FOURCC('c','t','x','\0'),
-		FORMAT_ERROR = FOURCC('F','F','F','\0'),
+		FORMAT_ERROR = FOURCC('f','m','t','\0'),
 		TABLES_ERROR = FOURCC('t','b','l','\0'),
 		STREAM_ERROR = FOURCC('d','i','r','\0'),
 		OUTPUT_ERROR = FOURCC('d','s','t','\0'),
@@ -90,8 +90,8 @@ extern "C" {
    CRYPS64_API void crypt64_invalidateKey(K64* key);
    CRYPS64_API int  crypt64_isValidKey(K64* key);
 
-   CRYPS64_API int  crypt64_prepareContext(K64* key);
-   CRYPS64_API int  crypt64_releaseContext(K64* key);
+   CRYPS64_API int  crypt64_prepareContext( K64* key, byte mod );
+   CRYPS64_API int  crypt64_releaseContext( K64* key );
 
    CRYPS64_API uint crypt64_encrypt(K64* key64, const byte* data, uint  size, char* dest);
    CRYPS64_API uint crypt64_decrypt(K64* key64, const char* data, byte* dest);
