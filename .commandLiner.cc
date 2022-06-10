@@ -723,7 +723,7 @@ cmBl hasOption( cmOp option )
 cmOp isModus( cmLn name )
      { return name[0] == c.running->options[indexOfName(name)]; }
 
-// The 'name' parameter supports resolving '*' in wildcards, so:
+// The 'name' parameter supports resolving wildcards (*'s), so:
 //     --f-fooBar as well --fooBong would be treated being modus foo*
 //     --flup as well as --f-flump would be treated being modus flu*
 cmOp isAnyModus( cmLn wild )
@@ -917,8 +917,8 @@ cmLn switchIdx( cmOp newOpt, cmIx newIdx)
     return nameOfNewOpt;
 }
 
-// check if the argument tagged <option> was added by the programm
-// after parsing, and so wasn't a 'really' user given commandline parameter
+// check if the argument tagged <option> was automatically added by the programm
+// after parsing parameters, and so could be seen not being 'real' user given parameter
 cmBl isDefault( cmOp option )
 {
     return c.running->types[ indexOf(option) ] > 'Z';
@@ -1195,7 +1195,7 @@ uint toSplitList(char* sepList, char* fromTo)
     } return elms;
 }
 
-const char* printSpList( char* list )
+char* toPrintList( char* list )
 {
     uint elmcount = toSplitList(list, "\0\n");
     DEBUGFMT("%i elements", elmcount)

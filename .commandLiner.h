@@ -220,7 +220,10 @@ COMMANDLINER_API void*   getDingens( const char* named );
 COMMANDLINER_API void    addDingens( const char* named, void* dings, void(*bumms)(void) );
 COMMANDLINER_API void    remDingens( const char* named );
 
-COMMANDLINER_API cmLn    printSpList(char* list);
+// convert the given, either ':', ';', ',', '\n' or ' ' 
+// separated list string to a '\n' separated list string
+COMMANDLINER_API char*   toPrintList(char* list);
+
 // split a string at contained 'fromSep' chars
 // to a list of 'toSep' separated substrings by
 // returning count on contained string elements

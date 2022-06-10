@@ -289,6 +289,12 @@ FeatureGet getFeatured( const char* name )
     varval = getVariable( name );
     result.name = name;
     if (varval == NoString) {
+		varval = getPrefixed(LOCAL,name);
+	}
+	if (varval == NULL) {
+		varval = getPrefixed(GLOBAL,name);
+	} 
+	if (varval == NULL) {
         result.type.flags = Type_NOTHIN;
         result.value.string = NoString;
         setErrorText( name );
@@ -441,7 +447,6 @@ int addFeaturedList( const char* feature, char* value )
 {
     int len = strlen(value);
     const char* macroval = getPrefixed( ANY, feature );
-    // char convertedValue[strlen(macroval)+len+4];
     MakeArray( char, convertedValue, strlen(macroval) + len + 4 );
 	char* setter = &convertedValue[0];
     *setter++ ='\"';
@@ -514,7 +519,7 @@ int listedFeature( unsigned listOperation, const char* listName, char* setValue 
         case REMOVE_FROM:
             return remFeaturedList( listName, setValue );
         default: {
-            setErrorText("List Operation");
+            setErrorText( "List Operation" );
             return false;
         }
     }
