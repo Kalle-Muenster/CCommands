@@ -206,7 +206,7 @@ const byte InfoHeader[] = {
 #include "FileTemplates/HalloWorldSnippet.cc"
 #include "FileTemplates/CommandFileTemplate.cc"
 #include "FileTemplates/ClassFileTemplate.cc"
-#if USE_MULTIPROP_LISTS
+#if USE_MULTIPROP_LISTS > 0
 #include "FileTemplates/ResourceMultiFileTemplate.cc"
 #else
 #include "FileTemplates/ResourceFileTemplate.cc"
@@ -310,7 +310,10 @@ int USAGE(generate)
     printf("    -d             -  writes the current date to info-headers\n");
     printf("    -s             -  silent mode(no feedback on stdout)\n");
     printf("   --o-path        -  output files to <path> instead of placing them into cwd\n\n");
-
+	printf(" persists:\n\n");
+	printf("  --setBase64 <on|off>    -  enables support for base64 packaged resources\n");
+	printf("  --setTabChars <string>  -  setup a sequence of chars used for line-einzug\n");
+	printf("  --setMultiMode <on|off> -  enables support for multiple replacement lists\n\n");
     if( hasOption('v') )
         showOptions();
     return hasOption('h')
@@ -682,7 +685,20 @@ const char* generate_setTabulatorString(cmLn tabString)
     } return pool_setf("generate: Now using \"%s\" for Tabulator sequence",tabString);
 }
 
-
+const char* generate_setMultMode(cmLn enable)
+{
+	beginPersistChange(LOCAL);
+	if( enable == 0 ) enable = "off";
+	else if( enable == 1 ) enable = "on";
+	if( (enable[0]=='o' && enable[1]=='n' ) || ( enable[0] == '1' || enable[1] == '1' ) ) {
+		enable = "(1)";
+    } else {
+		enable = "(0)";
+	} setPersistEntry( "USE_MULTIPROP_LISTS", enable );
+	commitPersistChange();
+	return pool_setf( "MULTIPROP_LISTS support: %s",
+	            enable[1]=='1'?"Enabled":"Disabled");
+}
 
 generator
 generate_Initialize( const char* options )
@@ -819,7 +835,10 @@ int main(int argc, char* argv[])
         printf( generate_setTabulatorString(rawNext('s')) );
         exit( getErrorCode() );
     }
-
+	if( isModus("setMultiMode") ) {
+		printf( generate_setMultMode(rawNext('s')) );
+		exit( getErrorCode() );
+	}
     SILENT_MODE = hasOption('s');
 
     getcwd( &outputDirectory[0], MAX_NAM_LEN );
