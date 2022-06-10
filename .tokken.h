@@ -34,13 +34,17 @@ extern "C"{
 #endif
 
     typedef enum TOKKEN_API tokken_CharSet {
-        tokken_HEX = 16, tokken_B64 = 64
+        tokken_HEX = 16,
+		tokken_B32 = 32,
+		tokken_B64 = 64
     } tokken_CharSet;
 
+	typedef struct TOKKEN_API tokken_Define tokken_Define;
     typedef struct TOKKEN_API tokken_Define {
         const byte*   grouping;
         tokken_CharSet charset;
         int               size;
+		const char*   (*create)( const tokken_Define* );
     } tokken_Define;
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
@@ -49,6 +53,7 @@ extern "C"{
 
     TOKKEN_API tokken_Define tokken_define( const char* grouping, tokken_CharSet mode );
     TOKKEN_API const char*   tokken_create( const tokken_Define* mode );
+	#define                  tokken_Create( tokdef ) tokdef->create( tokdef )
 
 #endif
 

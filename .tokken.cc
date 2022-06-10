@@ -17,13 +17,16 @@
 #include <.hexString.h>
 #include <.base64.h>
 
-#define DEBUG (1)
+#ifndef HEXSTRING_UPPERCASE
+#define HEXSTRING_UPPERCASE (1)
+#endif
 
   int USAGE(tokken)
   {
   Synopsis("--<h|b>-<size[,count]> [options]");
     printf("Options:\n\n\
   --h-<size[,count]> :  created tokken consisting from <size> count on hex digits\n\
+  --3-<size[,count]> :  created tokken consisting from <size> count on base32 digits\n\
   --b-<size[,count]> :  created tokken consisting from <size> count on base64 digits\n\
                      :  ( adding [,count] creates a big bunch of <count> tokkens at once! )\n\
   --g-<groups>       :  make tokken consisting from several, separated groups.\n\
@@ -42,9 +45,8 @@
         || !hasOption('h');
   }
 
-
-// regular includes here:
-
+#define BASE32_UPPER_DIGITS "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567="
+#define BASE32_LOWER_DIGITS "abvdefghijjlmnopqrstuvwxyz234567="
 
 const char* tokken_createHex( int size )
 { pool_scope
@@ -79,6 +81,26 @@ const char* tokken_createB64( int size )
     return creation;
 }
 
+const char* tokken_createB32( int size )
+{ pool_scope
+
+    MakeArray( char, out, size+1 )
+    int p = 0;
+    out[size]='\0';
+    const char* b32chars = BASE32_UPPER_DIGITS; // HEXSTRING_UPPERCASE 
+	                     //? BASE32_UPPER_DIGITS
+						 //: BASE32_LOWER_DIGITS;
+
+    while( size > p ) { int i = p; p += 16;
+        ulong numb = rand() | ((ulong)rand() << 16) | ((ulong)rand() << 32) | ((ulong)rand() << 48);
+        for(;i<p&&i<size;++i) {
+            out[i] = b32chars[numb&31];
+        numb >>= 4; };
+    } const char* creation = pool_set( &out[0] );
+    CleanArray( out )
+    return creation;
+}
+
 tokken_Define tokken_define( const char* groupString, tokken_CharSet forMode )
 {
     char groupSep = 0;
@@ -106,6 +128,7 @@ tokken_Define tokken_define( const char* groupString, tokken_CharSet forMode )
         arg.size += (groups[i] = (byte)atoi( grparg ));
         while( *grparg++ );
     } arg.grouping = groups;
+	arg.create = &tokken_create;
     CleanArray( groupArg )
     return arg;
 }
@@ -169,7 +192,7 @@ const char* tokken_groupedB64( int size, const char* grouping )
     MakeArray( char, outbuf, size + groups )
     outbuf[(size+groups)-1]='\0';
     const char* b64chars = base64_getTable();
-    while( size > p ) { int i = p; p+= 10;
+    while( size > p ) { int i = p; p += 12; // 10?
         ulong numb = rand() | ((ulong)rand() << 16) | ((ulong)rand() << 32) | ((ulong)rand() << 48);
         for( ; i<p && i<size; ++i ) {
             outbuf[i+o] = b64chars[numb&63];
@@ -183,16 +206,57 @@ const char* tokken_groupedB64( int size, const char* grouping )
     return zuruck;
 }
 
+const char* tokken_groupedB32( int size, const char* grouping )
+{ pool_scope
+
+    int p = 0;
+    while ( grouping[p++] );
+    int groups = p;
+    MakeArray( byte, grpbuf, p )
+    byte* group = grpbuf; p = 0;
+    while (p < groups) {
+        group[p] = grouping[p];
+        ++p;
+    } p = 0;
+    --groups;
+    char d[3];
+    d[0] =  group ? *(group++) : 0;
+    d[1] = size;
+    d[2] = 0;
+    int o = 0;
+    if(!group) group = (byte*)&d[1];
+    MakeArray( char, outbuf, size + groups )
+    outbuf[(size+groups)-1]='\0';
+	const char* b32chars = BASE32_UPPER_DIGITS;
+    // const char* b32chars = HEXSTRING_UPPERCASE 
+	                     // ? BASE32_UPPER_DIGITS
+						 // : BASE32_LOWER_DIGITS;
+    while( size > p ) { int i = p; p += 16;
+        ulong numb = rand() | ((ulong)rand() << 16) | ((ulong)rand() << 32) | ((ulong)rand() << 48);
+        for( ; i<p && i<size; ++i ) {
+            outbuf[i+o] = b32chars[numb&31];
+            if( !(--*group) ) { ++group;
+                outbuf[i+(++o)] = d[0];
+            } numb >>= 4; };
+    } outbuf[(size+groups)-2] = '\0';
+    const char* zuruck = pool_set( &outbuf[0] );
+    CleanArray( outbuf )
+    CleanArray( grpbuf )
+    return zuruck;
+}
+
 const char* tokken_create( const tokken_Define* mode )
 {
     if( mode->grouping ) {
         switch ( mode->charset ) {
             case tokken_HEX: return tokken_groupedHex( mode->size, mode->grouping );
+			case tokken_B32: return tokken_groupedB32( mode->size, mode->grouping );
             case tokken_B64: return tokken_groupedB64( mode->size, mode->grouping );
         }
     } else {
         switch ( mode->charset ) {
             case tokken_HEX: return tokken_createHex( mode->size );
+			case tokken_B32: return tokken_createB32( mode->size );
             case tokken_B64: return tokken_createB64( mode->size );
         }
     } setErrorText( "unknown token charset" );
@@ -237,6 +301,9 @@ int main(int argc,char**argv)
         grp = tokken_define( sizeArg, tokken_B64 );
         base64_Initialize();
         countArg = sizeArg = getName('b');
+    } else if ( search('3') ) {
+        grp = tokken_define( sizeArg, tokken_B32 );
+        countArg = sizeArg = getName('3');
     } else exit( USAGE(tokken) );
 
     while(*countArg) if( *++countArg == ',' ) {
@@ -248,8 +315,9 @@ int main(int argc,char**argv)
     if( isModus( "verbose" ) ) {
         printf( "generating %i token%s",
                 count, count > 1 ? "s\n" : "\n" );
-        printf( "from '%s' charset\n", hasOption('b')
-              ? "B64Table" : "HexValue" );
+        printf( "using '%s' charset\n", hasOption('b')
+              ? "B64Table" : hasOption('h') 
+			  ? "HexValue" : "B32Table" );
     } printf("\n");
 
     FILE* output = stdout;
