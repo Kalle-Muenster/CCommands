@@ -26,6 +26,10 @@
     --o-*.yps   : explicitely define de/en-crytion output destination.\n\
     --bin       : output will be binary data of exact input size + 12 byte.\n\
     --b64*      : output will be string data of 4:3 times the input size.\n\
+    --Hash      : enters 'Hash' modus\n\
+      --set     : select which hash algorythm crypt64 uses for hashing passwords\n\
+      --lst     : output a list of supported hash algorythem names (to be used as --set <alg>)\n\
+      -v <data> : simply calculate hash value for given <data> (-t/-f file or text)\n\
      -t         : interpret command line paramer <content> being string input\n\
      -f*        : interpret command line paramer <content> being file input\n\
      -s         : stream input from stdin rather then passing <content> parameter\n\n\
@@ -143,7 +147,7 @@ const char* createTableFromKey( ulong key )
     } else pool_setb( &usedKey.pass, 8 );
     return pool_merge(2);
 }
-
+ 
 ulong findKeyInThePool( const char* poolTable )
 {
     return *(ulong*)&poolTable[66];
@@ -1006,7 +1010,7 @@ int main(int argc,char**argv)
 {
     if( (!InitCommandLiner(argc,argv))
      || (!(hasOption('d')||hasOption('e')||hasOption('t')||hasOption('p')))
-     || (!hasOption('k')) ) {
+     || ((!hasOption('k'))&&(!hasOption('H'))) ) {
          exit(USAGE(crypt64));
     }
 
@@ -1015,13 +1019,6 @@ int main(int argc,char**argv)
     DEBUGLOG("srand((uint)(ptval)pool_InitializeCycle())")
     srand((uint)(ptval)pool_InitializeCycle());
 	
-	if ( isModus("pass") ) {
-		printf("\nHash Modus!\n");
-		const char* pass = rawNext('p');
-		printf("value of passphrase: '%s' is %llu\n",
-		        pass, crypt64_calculateHashValue( pass, strlen(pass) ) );
-		exit( EXIT_SUCCESS );
-	}
 	if ( isModus("test") ) {
 		printf("\nTest Modus!\n");
 		ulong hashA;
@@ -1060,7 +1057,39 @@ int main(int argc,char**argv)
         Mode = 'd';
     if( search('e') )
         Mode = 'e';
-
+	
+	if ( isModus("Hash") ) {
+		printf("\nHash Modus!\n");
+		if( search('v') ) {
+			const char* data = getName('v');
+			if( isSwitch('t') ) {
+				printf("hash value of string: '%s' is %llu\n",
+						data, crypt64_calculateHashValue( data, strlen(data) ) );
+			} else if ( isSwitch('f') ) {
+				FILE* f = fopen( data, "rb" );
+				if (f) {
+					fseek(f,0,SEEK_END);
+					const int fsize = ftell(f);
+					MakeArray( byte, loade, fsize )
+					fseek(f,0,SEEK_SET);
+					fread(&loade[0],1,fsize,f);
+					fclose(f);
+					printf( "hash value of file: '%s' is %llu\n",
+							data, crypt64_calculateHashValue( loade, fsize ) );
+					CleanArray( loade )
+				} else
+					setError("File not found",FourCC("file"));
+			}
+		} else 
+		if ( isModus("set") ) {
+			setError("Not implemented yet",FourCC("impl"));
+		} else
+		if ( isModus("lst") ) {
+			setError("Not implemented yet",FourCC("impl"));
+		}
+		exit( CheckForError() );
+	}
+	
     if( exists('k') ) {
         cmLn input = getName('k');
         if( !(key = crypt64_createKeyFromPass( input )) )

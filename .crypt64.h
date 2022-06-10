@@ -58,8 +58,8 @@ extern "C" {
 
 	typedef enum CRYPS64_API CRYPS64 {
 		CRYPST = '?',
-		BASE64 = 0x40u, //FOURCC('b','6','4','\0'), // try to see if possible if changing value to '0x40' (B64_FLAG) is possible without causing any evil side effects
-		BINARY = 0x10u, //FOURCC('b','i','n','\0'), // try to see if possible if changing value to '0x10' (BIN_FLAG) is possible without causing any evil side effects
+		BASE64 = 0x40u, // '0x40' (B64_FLAG)
+		BINARY = 0x10u, // '0x10' (BIN_FLAG)
 		CONTXT_ERROR = FOURCC('c','t','x','\0'),
 		FORMAT_ERROR = FOURCC('f','m','t','\0'),
 		TABLES_ERROR = FOURCC('t','b','l','\0'),
