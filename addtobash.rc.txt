@@ -1,0 +1,2 @@
+# add dynamic libraries to link against TCC executed C-scripts
+export LD_LIBRARY_PATH=/home/kalle/CMD/CCommands/linkage:$LD_LIBRARY_PATH

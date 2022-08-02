@@ -25,12 +25,12 @@
 
 #if !WINDOWS
     #define CONSOLA "$SHELL && "
-	#define CONSOLASYNCH "exec -c %s"
+    #define CONSOLASYNCH "exec -c %s"
 #else // if WINDOWS
     #define CONSOLA "%COMSPEC% /k"
-	#define CONSOLASYNCH "start \"\" %s"
-	#define DOUBLEDASHED_OUT "conout$"
-	#define DOUBLEDASHED_INP "conin$"
+    #define CONSOLASYNCH "start \"\" %s"
+    #define DOUBLEDASHED_OUT "conout$"
+    #define DOUBLEDASHED_INP "conin$"
 #endif
 
 #ifndef  EMPTY
@@ -65,7 +65,7 @@
 
 
 #if defined( EXPORT_COMMANDLINER_LIBRARIES ) && defined( EXPORT_COMMANDLINER_API )
-#define COMMANDLINER_API __declspec(dllexport) 
+#define COMMANDLINER_API __declspec(dllexport)
 #else
 #define COMMANDLINER_API
 #endif
@@ -84,10 +84,10 @@ typedef struct COMMANDLINER_API ArgVars {
 
 typedef struct COMMANDLINER_API Ding Ding;
 typedef struct COMMANDLINER_API Ding {
-	ulong dasda;
-	Ding* dings;
-	void* bumms;
-	void(*which)(void);
+    ulong dasda;
+    Ding* dings;
+    void* bumms;
+    void(*which)(void);
 } Ding;
 
 #define NoString getNoString()
@@ -99,7 +99,7 @@ typedef struct COMMANDLINER_API CommanderState {
     char  options[MAX_NUM_GUM];
     char  types[MAX_NUM_GUM];
     char* names[MAX_NUM_GUM];
-	Ding* dingens;
+    Ding* dingens;
     byte  numgum;
     byte  numopt;
     short endOfThePath;
@@ -175,7 +175,7 @@ COMMANDLINER_API cmIx    rawNum(void);
 COMMANDLINER_API cmIx    optNum(void);
 COMMANDLINER_API cmIx    numGum(void);
 
-COMMANDLINER_API // parameter validity and error handling 
+COMMANDLINER_API // parameter validity and error handling
 COMMANDLINER_API cmBl    isValidArg(cmLn);
 COMMANDLINER_API cmBl    isEmptyArg(cmLn);
 COMMANDLINER_API cmBl    wasError(void);
@@ -190,7 +190,7 @@ COMMANDLINER_API void    clearAllErrors(void);
 COMMANDLINER_API cmBl    CheckForError(void);
 COMMANDLINER_API void    ExitOnError(const char*);
 
-// 'path' to the file which contains main() 
+// 'path' to the file which contains main()
 COMMANDLINER_API cmLn    getCommander(void);
 // 'path' to the folder which contains that file which contains main()
 COMMANDLINER_API cmLn    getPathOfTheCommander(void);
@@ -220,7 +220,7 @@ COMMANDLINER_API void*   getDingens( const char* named );
 COMMANDLINER_API void    addDingens( const char* named, void* dings, void(*bumms)(void) );
 COMMANDLINER_API void    remDingens( const char* named );
 
-// convert the given, either ':', ';', ',', '\n' or ' ' 
+// convert the given, either ':', ';', ',', '\n' or ' '
 // separated list string to a '\n' separated list string
 COMMANDLINER_API char*   toPrintList(char* list);
 

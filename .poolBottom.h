@@ -87,9 +87,9 @@
 #endif
 
 #if defined( EXPERIMENTAL )
-	#define poolStream(plStrm) plStrm.read(&plStrm)
-	#define pntrStream(ptPStr) ptPStr->read(ptPlStr)
-	#define pool_createStream(getfu) pool_(createStream)(BOTTOM,getfu)
+    #define poolStream(plStrm) plStrm.read(&plStrm)
+    #define pntrStream(ptPStr) ptPStr->read(ptPlStr)
+    #define pool_createStream(getfu) pool_(createStream)(BOTTOM,getfu)
 #endif
 
 #ifdef  PREPARE_POOLBOTTOM

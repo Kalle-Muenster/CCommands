@@ -25,7 +25,7 @@ static struct WhirlVars pool_protopool_vars = {
 StringPool* whirlVar( StringPool* poolBottom )
 {
     pool_protopool_vars.running = poolBottom;
-	*((struct WhirlVars*)&poolBottom->Pls) = pool_protopool_vars;
+    *((struct WhirlVars*)&poolBottom->Pls) = pool_protopool_vars;
     return poolBottom;
 }
 
@@ -35,7 +35,7 @@ StringPool* whirlVar( StringPool* poolBottom )
 #endif
 #define prefix(name,plus) name ## plus
 static StringPool prefix( Pool, Instance) = { { 0 },{ 0 },{ 0 },
-	EMPTY, EMPTY, 0, &prefix( Pool, Instance ),
+    EMPTY, EMPTY, 0, &prefix( Pool, Instance ),
     (char*)&prefix(Pool,Instance).Cyc[0], 0
 };
 static StringPool* Pool = &prefix(Pool,Instance);
@@ -55,53 +55,53 @@ uint _writeCharToCycle( StringPool* inst, byte c, uint count );
 #define Pool inst
 #define pool inst->running
 
-#if defined(using_commandLiner) || defined(WITH_STRGPOOL) 
+#if defined(using_commandLiner) || defined(WITH_STRGPOOL)
 void poolDingsBumsWeg(void)
 {
-	StringPool* dings = (StringPool*)getDingens("pool");
-	#if DEBUG
-	if( dings == &PoolInstance ) {
-		printf("%s(): dingsbums points 'The Bottom' of the pool\n",__FUNCTION__);
-	} else {
-		printf("%s(): dingsbums (%p) is not 'The Bottom' (%p)\n",__FUNCTION__,dings,&PoolInstance);
-	}
-	#endif
-	pool_freeAllCycles_ex( dings );
+    StringPool* dings = (StringPool*)getDingens("pool");
+    #if DEBUG
+    if( dings == &PoolInstance ) {
+        printf("%s(): dingsbums points 'The Bottom' of the pool\n",__FUNCTION__);
+    } else {
+        printf("%s(): dingsbums (%p) is not 'The Bottom' (%p)\n",__FUNCTION__,dings,&PoolInstance);
+    }
+    #endif
+    pool_freeAllCycles_ex( dings );
 }
 #endif
 
 void pool_setBottom(StringPool* poolDingsbums)
 {
 #ifndef CLINE_INTERNAL
-#if defined(using_commandLiner) || defined(WITH_STRGPOOL) 
-	if(!getDingens( "pool" ) )
-		addDingens( "pool", poolDingsbums, &poolDingsBumsWeg );
+#if defined(using_commandLiner) || defined(WITH_STRGPOOL)
+    if(!getDingens( "pool" ) )
+        addDingens( "pool", poolDingsbums, &poolDingsBumsWeg );
 #endif
 #endif
-	defaultInstance = poolDingsbums;
-	#if DEBUG
-	printf("%s(): %p\n",__FUNCTION__,poolDingsbums);
-	#endif
+    defaultInstance = poolDingsbums;
+    #if DEBUG
+    printf("%s(): %p\n",__FUNCTION__,poolDingsbums);
+    #endif
 }
 
 StringPool* POOL_VOIDCALL( InitializeCycle )
 {
-	#if DEBUG
-	printf("%s(): bottom at the floor is: %p\n",__FUNCTION__,&PoolInstance);
-	#endif
+    #if DEBUG
+    printf("%s(): bottom at the floor is: %p\n",__FUNCTION__,&PoolInstance);
+    #endif
     if( inst->Pls == EMPTY ) {
-		inst->Cnt = EMPTY;
+        inst->Cnt = EMPTY;
         inst->Pls = 0;
         inst->running = inst; }
-	if( pool->Cnt == EMPTY ) {
+    if( pool->Cnt == EMPTY ) {
         pool->Cnt = 0;
         pool->Ovr = 0;
-		pool->Chk = 0;
+        pool->Chk = 0;
         const int SLICESIZE = (CYCLE_SIZE / CYCLE_COUNT);
         for( int i=0; i<CYCLE_COUNT; i++ ) {
             pool->Cyc[ pool->Pos[i] = (i*SLICESIZE) ] = 0;
         } pool->running = inst;
-    } pool_setBottom( pool ); 
+    } pool_setBottom( pool );
     return pool;
 }
 
@@ -109,8 +109,8 @@ StringPool* pool_getBottom( void )
 {
 #ifdef using_commandLiner
     if( !defaultInstance ) {
-		if( !(defaultInstance = (StringPool*)getDingens( "pool" )))
-			setErrorText( "initialization" ); } 
+        if( !(defaultInstance = (StringPool*)getDingens( "pool" )))
+            setErrorText( "initialization" ); }
 #endif
     return defaultInstance;
 }
@@ -138,15 +138,15 @@ void POOL_VOIDCALL(PrintStatistics)
 
 static char* slice_toString( Slice* chunk )
 {
-	#if DEBUG > 0
-	printf("%s(): slice->len is %i\n",__FUNCTION__,chunk->len);
-	#endif
+    #if DEBUG > 0
+    printf("%s(): slice->len is %i\n",__FUNCTION__,chunk->len);
+    #endif
     char* str = (char*)chunk->pos;
     *(str + chunk->len) = '\0';
     *str = chunk->cut;
     #if DEBUG > 0
-	printf("%s(): string is %s\n",__FUNCTION__,str);
-	#endif
+    printf("%s(): string is %s\n",__FUNCTION__,str);
+    #endif
     return str;
 }
 
@@ -268,12 +268,12 @@ int POOL_FUNCTION( sizePlan, int sizeplan )
         sizeplan = (sizeplan==0)? 1 : -sizeplan;
       #ifdef using_commandLiner
         if( sizeplan < 0 ) setErrorText("overlap");
-	  #endif
+      #endif
     } else sizeplan = 0;
     #ifdef using_commandLiner
-	    if (sizeplan == 0 ) setErrorText("buffer"); 
+        if (sizeplan == 0 ) setErrorText("buffer");
     #endif
-	return sizeplan;
+    return sizeplan;
 }
 
 uint* POOL_FUNCTION( ensure, uint straitLength )
@@ -575,7 +575,7 @@ void POOL_VOIDCALL( freeAllCycles )
     StringPool* ptrVal=0;
     while ( (ptrVal = pool_pop()) != inst )
         printf("%s(): next pop: %p\n",__FUNCTION__,ptrVal);
-	printf("%s(): all pools poped!\n",__FUNCTION__);
+    printf("%s(): all pools poped!\n",__FUNCTION__);
    #endif
     while ( pool_pop() != inst );
 }

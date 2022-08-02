@@ -1,0 +1,17 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\Applications\tcc.exe\shell\open\command]
+@="C:\\INTERPRETERS\\tcc\\tcc.exe -g -LC:\\INTERPRETERS\\tcc\\lib -IC:\\CMD\\CCommands -IC:\\INTERPRETERS\\tcc\\libtcc -llibtcc -run %0 %*"
+
+[HKEY_CURRENT_USER\Software\Classes\Applications\tcc.exe\shell\open\command]
+@="C:\\INTERPRETERS\\tcc\\tcc.exe -g -LC:\\INTERPRETERS\\tcc\\lib -IC:\\CMD\\CCommands -IC:\\INTERPRETERS\\tcc\\libtcc -llibtcc -run %0 %*"
+
+[HKEY_CLASSES_ROOT\c_auto_file\shell\open\command]
+@="C:\\INTERPRETERS\\tcc\\tcc.exe -g -LC:\\INTERPRETERS\\tcc\\lib -IC:\\CMD\\CCommands -IC:\\INTERPRETERS\\tcc\\libtcc -llibtcc -run %0 %*"
+
+[HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Applications\tcc.exe\shell\open\command]
+@="C:\\INTERPRETERS\\tcc\\tcc.exe -g -LC:\\INTERPRETERS\\tcc\\lib -IC:\\CMD\\CCommands -IC:\\INTERPRETERS\\tcc\\libtcc -llibtcc -run %0 %*"
+
+[HKEY_CURRENT_USER\SOFTWARE\Classes\c_auto_file\shell\open\command]
+@="C:\\INTERPRETERS\\tcc\\tcc.exe -g -LC:\\INTERPRETERS\\tcc\\lib -IC:\\CMD\\CCommands -IC:\\INTERPRETERS\\tcc\\libtcc -llibtcc -run %0 %*"
+

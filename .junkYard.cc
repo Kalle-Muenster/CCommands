@@ -229,7 +229,7 @@ void  junk_installCleansener( cmDtCall func )
 
 // allocate cbSize bytes of memory and coveres that in some chunk of junk (something
 // like a 'verpackung') which (when 'hold' grip variable inside that junk-chunk header
-// may be set to null) will be freed via ejector calls on the junkyard or (always, 
+// may be set to null) will be freed via ejector calls on the junkyard or (always,
 // regardless wether hold grip may be null or not) at shuttdown with dropping whole yard
 // it returns a pointer to the requested 'cbSize' bytes on raw memory
 // (which is allocated on the junkyard with same malloc call together with the verpackung
@@ -256,11 +256,11 @@ void* junk_registerJunkChunk( void* distMem )
 }
 
 
-// allocates objSize count on bytes covered in a 'verpackunks' chunk but additionally 
-// places a given function pointer within the verpackungs header structure. this 
+// allocates objSize count on bytes covered in a 'verpackunks' chunk but additionally
+// places a given function pointer within the verpackungs header structure. this
 // function in case the object isn't used anymore, will be called automatically by the
 // junkyard before that would free the allocated memory in case junk_cycle() called.
-// The dtor function will access the data as always the last operation accessing the 
+// The dtor function will access the data as always the last operation accessing the
 // data before this in the last step will get lost with being freed.
 void* junk_allocateNewObject( cmDtFunc objDtor, uint objSize )
 {
@@ -275,7 +275,7 @@ void* junk_allocateNewObject( cmDtFunc objDtor, uint objSize )
 // caution! junk_drop() function is ineffective for any alien data
 // chunks which will be integrated via junk_objectivateMemory(anydata)
 // when data before was not allocated via using the junkyard api also
-// then this data just only could be freed later again if the same alien 
+// then this data just only could be freed later again if the same alien
 // api which also was used for allocating the chunk is used for this...
 // anyway it is possible creating an object from some alien data chunk:
 // The funtion passed as the destructor then must take care about freeing
@@ -292,7 +292,7 @@ void* junk_objectivateMemory( cmDtFunc objDtor, void* objMem )
     return objMem;
 }
 
-// frees all memory allocated on the junk yard. should be called at 
+// frees all memory allocated on the junk yard. should be called at
 // shuttdown (commandLiner installes an atexit handled dingsbums)
 void junk_dropYard( void )
 {
@@ -313,7 +313,7 @@ void junk_dropYard( void )
 }
 
 // doing one drop-loop cycle (finds chunks marked for deletion and
-// calls destructors for these before freeing up allocated memory) 
+// calls destructors for these before freeing up allocated memory)
 void junk_cycle( void )
 {
     yard* junkyard = junk_getYard();
@@ -333,7 +333,7 @@ void junk_cycle( void )
 // delete it at once! ( do not wait for the next junk_cycle() call )
 ptval junk_free( void* chunk )
 {
-	yard* found = yard_takeOff( (ptval)chunk, junk_getYard() );
+    yard* found = yard_takeOff( (ptval)chunk, junk_getYard() );
     if( found ) {
         chunk = (void*)(ptval)((cmDtPunk)found->drop)( found );
         free( found );
@@ -347,11 +347,11 @@ ptval junk_free( void* chunk )
 ptval junk_drop( void* kannweg )
 {
     ptdif pointer = (ptdif)kannweg;
-	if( kannweg == (void*)*(ptval*)(pointer - sizeof(ptval) * SELF) ) {
-		return ((Junk*)(pointer - sizeof(ptval) * HOLD))->hold = NULL;
-	} else {
-		return junk_free( kannweg );
-	}
+    if( kannweg == (void*)*(ptval*)(pointer - sizeof(ptval) * SELF) ) {
+        return ((Junk*)(pointer - sizeof(ptval) * HOLD))->hold = NULL;
+    } else {
+        return junk_free( kannweg );
+    }
 }
 
 #undef SELF

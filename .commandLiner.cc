@@ -326,7 +326,7 @@ void QuickCommandInit(void)
         c.running->buffer[str + TERMI_POS] =
             c.running->names[i][0] = '\0';
 
-        
+
     }
     c.running->reserved = &c.running->buffer[MAX_NUM_GUM * MAX_NAM_LEN];
     c.running->buffer[(MAX_NUM_GUM * MAX_NAM_LEN) + TERMI_POS] =
@@ -469,10 +469,10 @@ int commandLineArgs( int count, char** argv )
                     ERROR_CODE(c.running)=ERROR_NO_FEATURES;
          #endif
                 // } else if (current[2]==' ') {
-					// printf("XXXXXXXXXXXXXXXXXXXX doubledash!!!\n");
-					// parameterCopy( c.running->names[c.running->numgum], DOUBLEDASHED_OUT );
+                    // printf("XXXXXXXXXXXXXXXXXXXX doubledash!!!\n");
+                    // parameterCopy( c.running->names[c.running->numgum], DOUBLEDASHED_OUT );
                     // c.running->types[c.running->numgum++] = 'R';
-				} else {
+                } else {
                     c.running->options[c.running->numgum]=current[2];
                     if(argv[i][3]=='-') {
                         parameterCopy( c.running->names[c.running->numgum],
@@ -607,15 +607,15 @@ int indexOfFirst( cmLn part )
            *p--='\0';
 
         if( part <= p ) {
-		 // means part was ending on '*'
+         // means part was ending on '*'
             for( int i=0; i<c.running->numgum; ++i ) {
                 uint cmp = stringCompare( part, c.running->names[i] );
-				if ( cmp > strlen( part ) || !cmp ) {
-					return i;
-				}
-			}
+                if ( cmp > strlen( part ) || !cmp ) {
+                    return i;
+                }
+            }
         } else {
-		 // means '*' was in the beginning
+         // means '*' was in the beginning
             const int len = (int)strlen(part);
             char rvrs[MAX_NAM_LEN];
             char trap[MAX_NAM_LEN];
@@ -632,8 +632,8 @@ int indexOfFirst( cmLn part )
             }
         }
     }
-	printf( "%s(): returns: -1\n", __FUNCTION__ );
-	return -1;
+    printf( "%s(): returns: -1\n", __FUNCTION__ );
+    return -1;
 }
 
 cmOp byIndexTheOption(int index)
@@ -692,7 +692,7 @@ cmLn nextRaw(void)
 // --foo -x --plup -7 bar
 //    -> as well... would return 'bar'
 //
-// --z-100 bar -p -x --foo -u moo 
+// --z-100 bar -p -x --foo -u moo
 //                      -> returns 'moo'
 //
 // --z-100 bar --foo -u moo
@@ -745,7 +745,7 @@ cmBl isAnyOtherModusThen( cmLn modus )
 }
 
 // return that modus which first character equals given 'option'
-// or, if given 'option' doesn't defines any modus, or if 'option' 
+// or, if given 'option' doesn't defines any modus, or if 'option'
 // maybe doesn't exists at all,... then 'NoString' is returned.
 cmLn getModus( cmOp option )
 {
@@ -777,7 +777,7 @@ cmLn getModusNumber( uint number )
 }
 
 // get the n'th modus given (counterpart to getModusNumber()
-// but the otherway round 
+// but the otherway round
 int modusNumber( cmLn mode ) {
     int modex=0;
     for(int i=0;i<c.running->numgum;++i) {
@@ -791,7 +791,7 @@ int modusNumber( cmLn mode ) {
 // is there <parameter> (*wildcard allowed) given
 // between <modus> and the next modus or (if <modus>
 // may be the last modus given) between <modus> and
-// the end of the command line 
+// the end of the command line
 cmBl hasModus( cmLn modus, cmLn parameter )
 {
     cmOp group = isAnyModus( modus );
@@ -887,8 +887,8 @@ cmLn switchIdx( cmOp newOpt, cmIx newIdx)
     lastRawquested = 0;
     int curIdx = indexOf(newOpt);
     curIdx = curIdx < 0
-	       ? c.running->numgum++
-		   : curIdx;
+           ? c.running->numgum++
+           : curIdx;
     if( newIdx == EMPTY ) {
         if ( curIdx == ( c.running->numgum - 1 ) ) {
             while( c.running->options[ ++newIdx ] );
@@ -980,7 +980,7 @@ uint stringCompareInternal( cmLn proof, cmLn probe, uint index )
     return !(A||B) ? EMPTY
            :(A!=B) ? index
            : stringCompareInternal(
-	   proof, probe, index
+       proof, probe, index
     );
 }
 
@@ -1021,7 +1021,7 @@ int setError( cmLn text, int code )
 }
 cmLn setErrorText( cmLn text )
 {
-	strcpy( &c.running->CommanderError[4], text );
+    strcpy( &c.running->CommanderError[4], text );
     ++ERROR_CODE( c.running );
     return ERROR_NAME( c.running );
 }
@@ -1139,12 +1139,12 @@ int tempf(const char* fmt, const char* name) {
 }
 
 cmLn unQuoted( cmLn arg )
-{ 
+{
     if( isQuoted( arg ) ) {
-		const int cut = (int)strlen(arg)-2;
-		int renew = indexOfName( arg );
+        const int cut = (int)strlen(arg)-2;
+        int renew = indexOfName( arg );
         setTemp( arg+1 )[cut] = '\0';
-		if (renew >= 0) return strcpy( c.running->names[renew], getTemp() );
+        if (renew >= 0) return strcpy( c.running->names[renew], getTemp() );
         else return getTemp();
     } else {
         return arg;
@@ -1153,29 +1153,29 @@ cmLn unQuoted( cmLn arg )
 
 cmLn toQuoted(cmLn arg)
 {
-	cmBl isqued = isQuoted( arg );
-	int renew = indexOfName( arg );
+    cmBl isqued = isQuoted( arg );
+    int renew = indexOfName( arg );
     char* chk = (char*)arg;
     char* out = setTemp("\"")+1;
     if ( *chk == '"' ) {
-		 *out++ = '\\';
-	} *out = *chk;
+         *out++ = '\\';
+    } *out = *chk;
     while( *++out = *++chk ) {
         if(*out=='"') {
            *out++ = '\\';
-		   *out = '"'; 
-		}
-	} *out++ = '"';
-	*out = '\0';
+           *out = '"';
+        }
+    } *out++ = '"';
+    *out = '\0';
     return ( renew >= 0 )
-	     ? strcpy( c.running->names[renew], getTemp() )
-	     : getTemp();
+         ? strcpy( c.running->names[renew], getTemp() )
+         : getTemp();
 }
 
 cmBl isQuoted(cmLn arg)
 {
-	const int end = (int)strlen(arg)-1;
-	return ( arg[0]=='\"' && arg[end]=='\"' );
+    const int end = (int)strlen(arg)-1;
+    return ( arg[0]=='\"' && arg[end]=='\"' );
 }
 
 uint toSplitList(char* sepList, char* fromTo)

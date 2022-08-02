@@ -7,7 +7,7 @@
 \*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/
 #ifdef using_stringPool
   #if using_stringPool<1
-   #ifdef _OnTheFly_ 
+   #ifdef _OnTheFly_
     #include ".stringPool.cc"
     #undef  Pool
     #define Pool INTERNAL_POOLBOTTOM
@@ -15,7 +15,7 @@
    #undef  using_stringPool
    #define using_stringPool (1)
   #endif
-#else  
+#else
 #define using_stringPool (1)
 
 
@@ -23,9 +23,9 @@
 #error '.stringPool.h' must be included before '.commandLiner.h'
 /*
     When including a "stringPool" and the "commandLiner", then
-	the '.stringPool.h' header always MUST be included at first
-	then BEFORE the ".commandLiner.h" header will be included.
-	If including sources _OnTheFly_ instead macro WITH_STRGPOOL
+    the '.stringPool.h' header always MUST be included at first
+    then BEFORE the ".commandLiner.h" header will be included.
+    If including sources _OnTheFly_ instead macro WITH_STRGPOOL
     is to be defined before including commandLiner to make it
     also fetching stringPool.cc source automatically within fly
 */
@@ -36,12 +36,15 @@ COMMANDLINER_EXTERN_C
 #endif
 
 #ifndef COMMANDLINER_ESCENTIALS_DEFINED
+#ifdef ulong
+#undef ulong
+#endif
 #if defined(__TINYC__)
     typedef uint8_t                byte;
     typedef uint16_t               word;
     typedef uint32_t               uint;
     typedef __SIZE_TYPE__          ptval;
-    typedef __PTRDIFF_TYPE__       ptdif;    
+    typedef __PTRDIFF_TYPE__       ptdif;
     typedef int64_t                slong;
     typedef uint64_t               ulong;
     typedef int                    cmBl;
@@ -50,9 +53,9 @@ COMMANDLINER_EXTERN_C
     typedef unsigned __int8        byte;
     typedef unsigned __int16       word;
     typedef unsigned __int32       uint;
-    typedef signed   __int64       slong;
+    typedef signed long long int   slong;
 #ifndef QT_VERSION
-    typedef unsigned __int64       ulong;
+    typedef unsigned long long int ulong;
 #endif
 #if defined(_WIN32) && !defined(_WIN64)
     typedef unsigned __int32       ptval;
@@ -64,7 +67,7 @@ COMMANDLINER_EXTERN_C
     typedef ulong       ptval;
     typedef slong       ptdif;
 #endif
-#else 
+#else
 #ifdef _WIN64
     typedef ulong       ptval;
     typedef slong       ptdif;
@@ -141,7 +144,7 @@ public:
     unsigned char cut;
     unsigned int  len;
     ulong         pos;
-	DeSliceFun    dsc;
+    DeSliceFun    dsc;
 } Slice;
 
 typedef StringPool STRINGPOOL_API POOL;
@@ -163,8 +166,8 @@ typedef StringPool STRINGPOOL_API POOL;
 #define POOL_FUNCTION(fnam,prms) pool_(fnam)( StringPool* inst, prms )
 #define POOL_FUNCTION2P(fnam,arg1,arg2) pool_(fnam)( StringPool* inst, arg1, arg2 )
 #define POOL_CREATE_BOTTOM(bottom) static StringPool bottom ## Instance = { \
-			{0}, {0}, {0}, EMPTY, EMPTY, 0, &bottom ## Instance, (char*)&bottom ## Instance.Cyc[0], 0 \
-	    }; static StringPool* bottom = pool_InitializeCycle_ex( whirlVar( &bottom ## Instance ) )
+            {0}, {0}, {0}, EMPTY, EMPTY, 0, &bottom ## Instance, (char*)&bottom ## Instance.Cyc[0], 0 \
+        }; static StringPool* bottom = pool_InitializeCycle_ex( whirlVar( &bottom ## Instance ) )
 #define pool_scope  POOL* Pool = pool_getBottom();
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
@@ -175,7 +178,7 @@ StringPool* whirlVar( StringPool* poolBottom );
 
 // must have called before can use.
 StringPool* POOL_VOIDCALL(InitializeCycle);
-#if defined( EXTERNAL_POOLBOTTOM ) || defined( INTERNAL_POOLBOTTOM ) 
+#if defined( EXTERNAL_POOLBOTTOM ) || defined( INTERNAL_POOLBOTTOM )
  #define   pool_InitializeCycle() pool_(InitializeCycle)(Pool)
 #else
 StringPool* pool_InitializeCycle(void);
@@ -194,7 +197,7 @@ StringPool* POOL_VOIDCALL(push);
 // frees the current active one on the top. - pop .. then it
 // returns pointer to the prior instance which lays down below
 // If no additional pools have been allocated yet before, it
-// does nothing then, returning pointer then just to the bottom, 
+// does nothing then, returning pointer then just to the bottom,
 // just to the floor.
 StringPool* POOL_VOIDCALL(pop);
 #define    pool_pop() pool_(pop)(Pool)
@@ -283,7 +286,7 @@ int     POOL_VOIDCALL(overlap);
 // Get the string which was just written before
 char*   POOL_VOIDCALL(get);
 #define pool_get() pool_(get)(Pool)
-// Get slice to the string just written before. 
+// Get slice to the string just written before.
 Slice   POOL_VOIDCALL(slic);
 #define pool_slic() pool_(slic)(Pool)
 
@@ -308,7 +311,7 @@ char*   POOL_FUNCTION(merge,int);
 // are retreived via Slicen cutters instead of char*
 // pointers which strictly depend on propper termination
 // and may fail when working on strings which not
-// strictly are ordered 'strait forward' accessible. 
+// strictly are ordered 'strait forward' accessible.
 Slice POOL_FUNCTION(slices,int);
 #define pool_slices(merget) pool_(slices)(Pool,merget)
 #define slice_get(poolslice) poolslice.dsc(&poolslice)
@@ -322,24 +325,24 @@ Slice POOL_FUNCTION(slices,int);
 // not 'cycle' anymore, but will push a
 // new pool each time it's reaching end.
 // when 'collectCheckpoint()' is called
-// for collecting any chunks pushed in 
-// between, it switches back to recycle 
-// mode where overwriting the beginning 
+// for collecting any chunks pushed in
+// between, it switches back to recycle
+// mode where overwriting the beginning
 uint*   POOL_VOIDCALL(setCheckpoint);
-#define pool_setCheckpoint() pool_(setCheckpoint)(Pool) 
+#define pool_setCheckpoint() pool_(setCheckpoint)(Pool)
 #define pool_deployBark() pool_setCheckpoint()
 
 // Collect all strings which have been stored
-// since last call to 'setCheckpoint()' and 
+// since last call to 'setCheckpoint()' and
 // returns these merged into (maybe several)
 // long, huge string chunks (each CYCLE_SIZE
 // count on bytes large. if since 'checkpoint'
 // additional instances may have been pushed,
-// 'collectCheckpoint()' then is callable 
+// 'collectCheckpoint()' then is callable
 // severeal times after another for returning
 // each of the CYCLE_SIZEed chunks which have
 // been pushed during larger transfere opperations.
-// each call then pops current pool and restores 
+// each call then pops current pool and restores
 // previous one,. when all allocated pools are
 // collected and have been poped again it returns
 // NULL then and switches back it's behavior to
@@ -349,23 +352,23 @@ char*   POOL_VOIDCALL(collectCheckpoint);
 #endif
 
 // Return count on 'slices' left till point of no return
-// will be passed. ...Where 'slices' here should be seen 
-// rather predictional value. it assumes avarage string 
+// will be passed. ...Where 'slices' here should be seen
+// rather predictional value. it assumes avarage string
 // sizes of 'SLICE_SIZE' per pool_set() call. so at least
-// much more set calls may be possible to make if many 
+// much more set calls may be possible to make if many
 // string slices set where even shorter then SLICE_SIZE.
 int     POOL_VOIDCALL(slicesTillPointOfNoReturn);
 #define pool_slicesTillPointOfNoReturn() pool_(slicesTillPointOfNoReturn)(Pool)
 
 #ifndef NO_CHECKPOINT_MODE
 // Count on Slices already in use (better: count
-// on Slices pointing to strings which where written 
+// on Slices pointing to strings which where written
 // since pool_setCheckpoint() or pool_deployBark() where
 // called before..
 int     POOL_VOIDCALL(slicesSinceCheckpoint);
 #define pool_slicesSinceCheckpoint() pool_(slicesSinceCheckpoint)(Pool)
 
-// Exact count on bytes which have been written 
+// Exact count on bytes which have been written
 // since setCheckpoint() has been called before
 int     POOL_VOIDCALL(byteSinceCheckpoint);
 #define pool_byteSinceCheckpoint() pool_(byteSinceCheckpoint)(Pool)
@@ -390,7 +393,7 @@ uint    POOL_FUNCTION(getSliceSize,uint);
 #define pool_getSliceSize(number) pool_(getSliceSize)(Pool,number)
 
 #ifndef NO_CHECKPOINT_MODE
-// Pop any pool chunks which may have been pushed since programm start 
+// Pop any pool chunks which may have been pushed since programm start
 // and which still are attached to the bottom at least. will be called
 // automatically by the process's at_exit() handlers when used within
 // scripts or projects which also include commandLiner/environMentor.
@@ -402,10 +405,10 @@ uint    POOL_FUNCTION(getSliceSize,uint);
 // process close without having it called neither never at all)
 void    POOL_VOIDCALL(freeAllCycles);
 #define pool_freeAllCycles() pool_(freeAllCycles)(Pool)
-#endif 
+#endif
 
 // Print out actual pool state stats for debug purpose, like fillstate,
-// pools count, everage slicen sizes, count on overlaps, etc... 
+// pools count, everage slicen sizes, count on overlaps, etc...
 #if DEBUG>0
 void    POOL_VOIDCALL(PrintStatistics);
 #define pool_PrintStatistics() pool_(PrintStatistics)(Pool)
@@ -421,13 +424,13 @@ void    POOL_VOIDCALL(PrintStatistics);
         SimplePoolStream data;
         PoolStreamGetter read;
         char*            last;
-		StringPool*       pool;
+        StringPool*       pool;
     } PoolStream;
-	#define poolStream(plStrm) plStrm.read(&plStrm)
-	#define pntrStream(ptPStr) ptPStr->read(ptPlStr)
+    #define poolStream(plStrm) plStrm.read(&plStrm)
+    #define pntrStream(ptPStr) ptPStr->read(ptPlStr)
     PoolStream POOL_FUNCTION( createStream, SimplePoolStream function );
-	#define    pool_createStream(getfu) pool_(createStream)( Pool, getfu )
-	
+    #define    pool_createStream(getfu) pool_(createStream)( Pool, getfu )
+
 #endif
 
 

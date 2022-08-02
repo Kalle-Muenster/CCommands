@@ -272,7 +272,7 @@ typedef struct NameSplit {
 int USAGE(fs)
 {
     Synopsis("[opt] [./rel/path*]");
-	printf("  -.   -   only lists FOLDER (...but as well extension-less files)\n\
+    printf("  -.   -   only lists FOLDER (...but as well extension-less files)\n\
    -*    -  only lists FILES (...but only these which got extension. )\n\
    -p    -  output always full path, even if entries are in cwd\n\
    --cpy -<FOLDER>  -  rather then just outputting list of found matches to stdout,\n\
@@ -504,19 +504,19 @@ int fs_PNE( const char* path )
         setOption('P',&pathName[0]);
         pathName[i]=getName('N')[0];
     } else {
-		DEBUGLOG("using path of cwd!")
-		tempf("%s/",fs_CD());
+        DEBUGLOG("using path of cwd!")
+        tempf("%s/",fs_CD());
         setOption('P',getTemp());
-		DEBUGFMT("path is: %s",path)
-		DEBUGFMT("&pathName[0] is: %s",&pathName[0])
-		if( isEmptyArg(path) ) {
-			if( !hasOption('*') ) {
-				setOption('N',"*");
-				setOption('E',".*");
-			} else 
-				setOption('N',"");
+        DEBUGFMT("path is: %s",path)
+        DEBUGFMT("&pathName[0] is: %s",&pathName[0])
+        if( isEmptyArg(path) ) {
+            if( !hasOption('*') ) {
+                setOption('N',"*");
+                setOption('E',".*");
+            } else
+                setOption('N',"");
         } else
-			setOption('N',&pathName[0]);
+            setOption('N',&pathName[0]);
     } i--;
     while(pathName[++i]!='\0');
     if(hasExt) pathName[i] = getName('E')[0];
@@ -529,7 +529,7 @@ NameSplit splitAtStars(char* Name, char* Extension)
     DEBUGFMT("enter extension: %s",Extension)
 
     NameSplit parts = { Name, NULL, Extension, NULL };
-	
+
     // split the 'name' part at '*' sign,
     while(*parts.array[0]!='\0') {
         if(*parts.array[0]=='*') {
@@ -578,7 +578,7 @@ const char* firstMatchFromPNE(void)
 // into the given output stream 'outStream'
 void filesListFromPNE(void* outStream)
 {
-	DEBUGLOG("enter")
+    DEBUGLOG("enter")
 
                 DIR* dir = opendir( getName('P') );
     NameSplit split = splitAtStars( getName('N') ,
@@ -607,23 +607,23 @@ void filesListFromPNE(void* outStream)
             }
         } while( ent = readdir(dir) );
     } else {
-		DEBUGLOG("writing found entries to outputstream")
+        DEBUGLOG("writing found entries to outputstream")
         if( isSwitch('p') )
             noOption('P');
         do matchEntry( ent, &split.four );
         while( ent = readdir(dir) );
-		int dbgcycpsht = pool_cyclesPushed();
-		DEBUGFMT("%i new pools have been pushed!",dbgcycpsht)
-		if ( dbgcycpsht > 1 ) {
-			DEBUGLOG("several pools have been pushed")
-			while( output = pool_collectCheckpoint() ) 
-				fwrite( output, 1, strlen(output), (FILE*)outStream );
-			pool_freeAllCycles();
-		} else {
-			DEBUGLOG("einer ist keiner!,... no pools pushed")
-			output = pool_collectCheckpoint();
-			fwrite( output, 1, strlen(output), (FILE*)outStream );
-		}	
+        int dbgcycpsht = pool_cyclesPushed();
+        DEBUGFMT("%i new pools have been pushed!",dbgcycpsht)
+        if ( dbgcycpsht > 1 ) {
+            DEBUGLOG("several pools have been pushed")
+            while( output = pool_collectCheckpoint() )
+                fwrite( output, 1, strlen(output), (FILE*)outStream );
+            pool_freeAllCycles();
+        } else {
+            DEBUGLOG("einer ist keiner!,... no pools pushed")
+            output = pool_collectCheckpoint();
+            fwrite( output, 1, strlen(output), (FILE*)outStream );
+        }
     }
 }
 
@@ -676,7 +676,7 @@ const char* fs_prepareDestinationPattern(const char* path)
             dst->setExte(dst,buf);
         }
     } else if (dst->flags & IS_FOLDER) {
-		DEBUGLOG("IS_FOLDER")
+        DEBUGLOG("IS_FOLDER")
         strcpy(buf,dst->getPath(dst));
         strcat(buf,dst->getName(dst));
         DEBUGFMT("input pth: %s",buf)
@@ -689,7 +689,7 @@ const char* fs_prepareDestinationPattern(const char* path)
         DEBUGFMT("ext: %s",dst->getExte(dst))
         pool_set( dst->getFull(dst) );
         DEBUGFMT("ret: %s",pool_get())
-		return pool_get();
+        return pool_get();
 }
 
 #ifdef fs
@@ -777,15 +777,15 @@ int main(int argc,char**argv)
             printf("will execute: %s\n",fullPathnameT=pool_merge(2));
             system(fullPathnameT);
         } exit(CheckForError());
-    } 
+    }
 
     // everything which was happening in PNE before 'p' check used full path names
-    
-	if(hasOption('p'))
+
+    if(hasOption('p'))
         noOption('p');
     else
         setSwitch('p');
-	
+
     // evrything below now is handled as cwd local 'file.ext' file or directory name
 
 
@@ -802,7 +802,7 @@ int main(int argc,char**argv)
         exit( USAGE(fs) );
 
     while( do_ListMode(_listmode) );
-	printf("\n");//%c",(char)0x04);
+    printf("\n");//%c",(char)0x04);
 
     exit( CheckForError() );
 }

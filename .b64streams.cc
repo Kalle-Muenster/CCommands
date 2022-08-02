@@ -308,7 +308,7 @@ uint base64_initNewB64StreamStruct( const char* mode, b64Stream* stream )
 b64Stream* base64_createDataStream( void* src_dat, uint src_len, const char* mode )
 {
     b64Stream* stream = (b64Stream*)junk_allocateNewObject( (cmDtFunc)&base64_destream,
-	                                     sizeof(b64Stream) );
+                                         sizeof(b64Stream) );
     uint m = base64_initNewB64StreamStruct( mode, stream );
     char* Mode = (char*)&m;
     if ( Mode[0] == 'd' && Mode[1] == 'r' ) {
@@ -327,7 +327,7 @@ b64Stream* base64_createDataStream( void* src_dat, uint src_len, const char* mod
 b64Pool* base64_createPoolStream( const char* mode )
 {
     b64Pool* stream = (b64Pool*)junk_allocateNewObject(
-	       (cmDtFunc)&base64_destream, sizeof(b64Pool) );
+           (cmDtFunc)&base64_destream, sizeof(b64Pool) );
     uint m = base64_initNewB64StreamStruct( mode, (b64Stream*)stream );
     if (wasError())
         return stream;
@@ -349,17 +349,17 @@ b64Pool* base64_createPoolStream( const char* mode )
 
 uint prepare_file_mode( uint modeflags )
 {
-	char* Mode = (char*)&modeflags;
+    char* Mode = (char*)&modeflags;
     if (((Mode[0] == 'd') && (Mode[1] == 'w'))
     ||   (Mode[0] == 'e') && (Mode[1] == 'r'))
           Mode[2] = 'b';
-	return modeflags;
+    return modeflags;
 }
 
 int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned mode )
 {
     if (!wasError()) {
-		char* Mode = (char*)&mode;
+        char* Mode = (char*)&mode;
         if ( (FILE*)file == stdin
           || (FILE*)file == stdout
           || (FILE*)file == stderr ) {
@@ -405,7 +405,7 @@ int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned 
                     stream->pos = (ptval)ptB[0];
                     stream->buf = 0;
 #elif defined(__TINYC__)
-					char    ein[1];
+                    char    ein[1];
                     stream->buf = NULL;
                     stream->get = Mode[0] == 'e'
                                 ? &file_get_enc
@@ -446,14 +446,14 @@ int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned 
 b64File* base64_createFileStream( const char* fileName, const char* mode )
 {
     b64File* stream = (b64File*)junk_allocateNewObject(
-	       (cmDtFunc)&base64_destream, sizeof(b64File) );
+           (cmDtFunc)&base64_destream, sizeof(b64File) );
     uint mod = base64_initNewB64StreamStruct( mode, (b64Stream*)stream );
-	mod = prepare_file_mode( mod );
-	if ( base64_initB64FileStreamStruct( stream, fileName, mod ) ) {
-		return stream;
-	} else { 
-		return (B64F*)junk_drop( stream );
-	}
+    mod = prepare_file_mode( mod );
+    if ( base64_initB64FileStreamStruct( stream, fileName, mod ) ) {
+        return stream;
+    } else {
+        return (B64F*)junk_drop( stream );
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////
