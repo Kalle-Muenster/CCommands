@@ -34,8 +34,8 @@ extern "C" {
 #endif
 
 
-#define CRYPT64_ENCRYPTED_SIZE(size) BASE64_ENCODED_SIZE(size)+16u
-#define CRYPT64_DECRYPTED_SIZE(size) BASE64_DECODED_SIZE(size-16u)
+#define CRYPT64_ENCRYPTED_SIZE(size) BASE64_ENCODED_SIZE( size ) + 16u
+#define CRYPT64_DECRYPTED_SIZE(size) BASE64_DECODED_SIZE( (size-16u) )
 
 	typedef b64Frame k64Chunk;
 
@@ -60,6 +60,7 @@ extern "C" {
 		CRYPST = '?',
 		BASE64 = 0x40u, // '0x40' (B64_FLAG)
 		BINARY = 0x10u, // '0x10' (BIN_FLAG)
+	    NOT_INITIALIZED = FOURCC('i','n','i','\0'),
 		CONTXT_ERROR = FOURCC('c','t','x','\0'),
 		FORMAT_ERROR = FOURCC('f','m','t','\0'),
 		TABLES_ERROR = FOURCC('t','b','l','\0'),
@@ -75,12 +76,16 @@ extern "C" {
 
    CRYPS64_API void     crypt64_Initialize( bool init );
 
-   CRYPS64_API K64F*    crypt64_createFileStream( const char* pass, const char* path, const char* mode );
+   CRYPS64_API K64F*    crypt64_createFileStream( K64* key, const char* path, const char* mode );
    CRYPS64_API uint     crypt64_sread( byte* dst, uint size, uint count, K64F* cryps );
    CRYPS64_API uint     crypt64_swrite( const byte* src, uint size, uint count, K64F* cryps );
    CRYPS64_API k64Chunk crypt64_getYps( K64F* vonDa );
    CRYPS64_API uint     crypt64_putYps( k64Chunk dieses, K64F* nachDa );
    CRYPS64_API int      crypt64_frameSize( K64F* stream );
+   CRYPS64_API int      crypt64_position( K64F* stream );
+   CRYPS64_API int      crypt64_canStream( K64F* stream );
+   CRYPS64_API void     crypt64_flush( K64F* stream );
+   CRYPS64_API void     crypt64_close( K64F* stream );
 
    CRYPS64_API K64* crypt64_allocateNewKey(void);
    CRYPS64_API K64* crypt64_initializeKey(K64* key,ulong value);

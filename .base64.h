@@ -32,12 +32,20 @@ extern "C" {
 #endif
 
 #if     BASE64_WITH_LINEBREAKS > 0
-#define BASE64_COMPRESSIONRATE  (4.0/3.0)*(65.0/64.0)
+#define BASE64_COMPRESSIONRATE  0.7384615384615385 // 1.354166666666667
+    //  1.35416_ is 4/3 * 65/64 
+    //  *this is related to the fact that output after each 64th byte
+    //  gets an additional linebreak byte inserted which even if that
+    //  byte doesn't transports any information, indeed increases the
+    //  size of the data which will be generated for output.
 #else
-#define BASE64_COMPRESSIONRATE  (4.0/3.0)
+#define BASE64_COMPRESSIONRATE  0.75    // (4.0/3.0)
 #endif
-#define BASE64_ENCODED_SIZE(size) (uint)((size*BASE64_COMPRESSIONRATE)+2.5)
-#define BASE64_DECODED_SIZE(size) (uint)(0.5+(size-2.0)/BASE64_COMPRESSIONRATE) 
+#define BASE64_PADDING_SIZE(r,sz) ((r - (sz % r)) % r)
+#define BASE64_ENCODINGRATE(size) (uint)( 0.5 + ( (double)size / BASE64_COMPRESSIONRATE ) )
+#define BASE64_ENCODED_SIZE(size) BASE64_ENCODINGRATE(size) + BASE64_PADDING_SIZE(4, BASE64_ENCODINGRATE(size) )
+#define BASE64_DECODINGRATE(size) (uint)( 0.5 + ( (double)size * BASE64_COMPRESSIONRATE ) )
+#define BASE64_DECODED_SIZE(size) BASE64_DECODINGRATE(size) + BASE64_PADDING_SIZE(3, BASE64_DECODINGRATE(size) )
 #ifndef BASE64_VERFAHREN
 #define BASE64_VERFAHREN 1
 #endif

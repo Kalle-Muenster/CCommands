@@ -48,34 +48,32 @@
 #endif
 
 /* TODO's:
-	add possibility to use rotating keys during de/en cryption. so each frame will be crypted differently effected due to this rotation  
+    add possibility to use rotating keys during de/en cryption. so each frame will be crypted differently effected due to this rotation
     add possibility of wider range of key variations by extending the relaying base64 source script so 255 different digits may be used
        in cryption tables (e.g still 64 different digits per table are used then, but these 64 can be chosen by different keys individualy
-	   from a set 255 different available digits)
-	make possible restricting pass phrases to being only valid if containing a mandatory count on 'wrong' entered characters. - like the
-     	like these password must contain:
-		    at least 1 alphabetical character
-		    at least 1 numerical didgit character 
-            at least 1 special character 
-	 'and': at least 1 wrong entered character 
-			(would lead to a maybe confusing behavior when seting up a password.... the second 'verify password' field then must be entered
-			differently then the first 'set password' field - divergency between these varients of the password then is mandatorey errorlevel
-			for entering valid passwords later)
-        so, entering passords correctly always would be invalid then. only inputs where validation returns some distinct, mandatory errorlevel would 
-		be treated 'valid' password for granting entrance then.
-		this then introduces possibillity for "password always MUST be enterd differently then as like it was entered last time before" like rules... 
-		if entered same wrong character at same position, two times after another - the second time it won't be valid anymore. (could greatly
-		increase security regarding automated attacks where algorythms trying to find valid entry by iterating random numbers... - because
-		a password found by an algorythm like such, turns invalid within same moment the algorythinm finds it...
-		
+       from a set 255 different available digits)
+    make possible restricting pass phrases to being only valid if containing a mandatory count on 'wrong' entered characters. - like the
+        like these password must contain:
+            at least 1 alphabetical character
+            at least 1 numerical didgit character
+            at least 1 special character
+     'and': at least 1 wrong entered character
+            (would lead to a maybe confusing behavior when seting up a password.... the second 'verify password' field then must be entered
+            differently then the first 'set password' field - divergency between these varients of the password then is mandatorey errorlevel
+            for entering valid passwords later)
+        so, entering passords correctly always would be invalid then. only inputs where validation returns some distinct, mandatory errorlevel would
+        be treated 'valid' password for granting entrance then.
+        this then introduces possibillity for "password always MUST be enterd differently then as like it was entered last time before" like rules...
+        if entered same wrong character at same position, two times after another - the second time it won't be valid anymore. (could greatly
+        increase security regarding automated attacks where algorythms trying to find valid entry by iterating random numbers... - because
+        a password found by an algorythm like such, turns invalid within same moment the algorythinm finds it...
+
 */
 // flg[1] stream type '?'  (check: 0x3F == 0x2E identifies a Non-Crypted FILE
 // CRYPST                   check: 0x3F == 0x2F identifies a Non-Crypted In/Out/Err stream
-//                          check: 0x3F == 0x3E identifies Encrypted FILE 
-//                          check: 0x3F == 0x3F identifies Encrypted In/Out/Err stream ) 
+//                          check: 0x3F == 0x3E identifies Encrypted FILE
+//                          check: 0x3F == 0x3F identifies Encrypted In/Out/Err stream )
 
-#define BIN_FLAG 0x10
-#define B64_FLAG 0x40
 
 char* K64_table( K64* key ) {
     return &key->b64cc[4].i8[0];
@@ -88,7 +86,7 @@ int crypt64_isValidKey( K64* key ) {
 
 int K64_moduse( K64* key, char passa ) {
     return key->b64cc[3].i8[0] == passa
-	     ? key->b64cc[3].i8[1] : 0;
+         ? key->b64cc[3].i8[1] : 0;
 }
 
 ulong CurrentContext = 0;
@@ -147,7 +145,7 @@ const char* createTableFromKey( ulong key )
     } else pool_setb( &usedKey.pass, 8 );
     return pool_merge(2);
 }
- 
+
 ulong findKeyInThePool( const char* poolTable )
 {
     return *(ulong*)&poolTable[66];
@@ -164,20 +162,20 @@ ulong crypt64_calculateHashValue( const byte* input_data, int input_size )
 
 int haerteGradFromMerkeHart( ulong a, int hart, ulong b, ulong* grad )
 {
-	ulong merk = *grad;
-	int haerte = 0;
-	ulong hier = 0;
-	for ( int i=0; i<64; ++i ) { hier = 1ull << i;
-		int ist = (int)( (a&hier) ^ (b&hier) );
-		if (ist) {
-			ist = (*grad & hier) == 0;
-			*grad |= hier;
-		} else {
-			*grad &= ~hier;
-		} haerte += ist;
-	} return merk != *grad
-	      && haerte == hart -1;
-}	
+    ulong merk = *grad;
+    int haerte = 0;
+    ulong hier = 0;
+    for ( int i=0; i<64; ++i ) { hier = 1ull << i;
+        int ist = (int)( (a&hier) ^ (b&hier) );
+        if (ist) {
+            ist = (*grad & hier) == 0;
+            *grad |= hier;
+        } else {
+            *grad &= ~hier;
+        } haerte += ist;
+    } return merk != *grad
+          && haerte == hart -1;
+}
 
 // crypt64 API: //////////////////////////////////////////
 
@@ -193,7 +191,7 @@ K64* crypt64_createKeyFromHash( ulong hash )
         newKey->pass.value = hash;
         return newKey;
     } else {
-        setError( "table missmatch", FourCC("tbl") );
+        setError( "table missmatch", TABLES_ERROR );
         return NULL;
     }
 }
@@ -224,7 +222,7 @@ K64* crypt64_initializeKey( K64* key, ulong value )
         key->pass.value = value;
         return key;
     } else {
-        setError( "table missmatch", FourCC("tbl") );
+        setError( "table missmatch", TABLES_ERROR );
         return NULL;
     }
 }
@@ -243,8 +241,8 @@ void crypt64_invalidateKey( K64* key64 )
 const char* crypt64_createValidator( K64* key )
 {
     if( CurrentContext == key->pass.value )
-	{		
-		// create 'encryption key' verification header  
+    {
+        // create 'encryption key' verification header
         key->b64cc[0].u32 =  *(uint*)&key->pass.ccode[0];
         key->b64cc[0] = base64_encodeFrame(key->b64cc[0]);
         key->b64cc[1].u32 =  *(uint*)&key->pass.ccode[3];
@@ -253,56 +251,57 @@ const char* crypt64_createValidator( K64* key )
         key->b64cc[2].i8[2] = 0; key->b64cc[2].i8[3] = 0;
         key->b64cc[2] = base64_encodeFrame(key->b64cc[2]);
 
-		char mod = key->b64cc[3].i8[1];
-		key->b64cc[4].u32 = 0;
-		
-		// create 'encryption format' verification header
-		key->b64cc[3].i8[0] = 'e';
+        char mod = key->b64cc[3].i8[1];
+        key->b64cc[4].u32 = 0;
+
+        // create 'encryption format' verification header
+        key->b64cc[3].i8[0] = 'e';
         key->b64cc[3].i8[1] = 'b';
-        key->b64cc[3].i8[2] = mod == BIN_FLAG ? 'i' : '6';
-		key->b64cc[3].i8[3] = mod == BIN_FLAG ? 'n' : '4';
-		
+        key->b64cc[3].i8[2] = mod == BINARY ? 'i' : '6';
+        key->b64cc[3].i8[3] = mod == BINARY ? 'n' : '4';
+
     return &key->b64cc[0].i8[0]; }
-	
-	else setError( "context", FourCC("ctx") );
+
+    else setError( "context", CONTXT_ERROR );
     return 0;
 }
 
 fourCC checkEncryptionFormat( K64* key, const byte* header )
 {
-	key->b64cc[4].u32 = 0;
-	key->b64cc[0].u32 = ((const uint*)header)[0];
+    key->b64cc[4].u32 = 0;
+    key->b64cc[0].u32 = ((const uint*)header)[0];
     key->b64cc[1].u32 = ((const uint*)header)[1];
     key->b64cc[2].u32 = ((const uint*)header)[2];
-	key->b64cc[3].u32 = ((const uint*)header)[3];
-	fourCC format = *(fourCC*)&key->b64cc[3].i8[1];
-	key->b64cc[4].i8[0] = 0x3D;
-	return format;
+    key->b64cc[3].u32 = ((const uint*)header)[3];
+    key->b64cc[4].i8[0] = 0;
+    fourCC format = *(fourCC*)&key->b64cc[3].i8[1];
+    key->b64cc[4].i8[0] = 0x3D;
+    return format;
 }
 
 int crypt64_verifyValidator( K64* key, const byte* dat )
 {
     if( CurrentContext == key->pass.value )
-	{
-		char   ctx = key->b64cc[3].i8[1];
-		fourCC fmt = checkEncryptionFormat( key, dat );
-		char   dir = key->b64cc[3].i8[0] - 1;
-		
-		int valide = (dir == 'd');
-		if( valide )
-			valide = ( ctx == BIN_FLAG
-		           ? ( ((fmt&0x0000ff00)>>8) == 'i')
-				   : ( ((fmt&0x0000ff00)>>8) == '6') );
-		if( valide ) { byte validator[24];
-			validator[20] =	validator[23] = 0;
-			base64_decodeData( &validator[0], &key->b64cc[0].i8[0] );
-            ulong check = byteOrder_stringTOlongCC( &validator[0] );
-			if( !( valide = ( key->pass.value == check ) ) )
-			    setError( "phrase", FourCC("key") );
-		} else  setError( "format", fmt );
+    {
+        char   ctx = key->b64cc[3].i8[1];
+        fourCC fmt = checkEncryptionFormat( key, dat );
+        char   dir = key->b64cc[3].i8[0] - 1;
 
+        int valide = (dir == 'd');
+        if( valide )
+            valide = ( ctx == BINARY
+                   ? ( ((fmt&0x0000ff00)>>8) == 'i')
+                   : ( ((fmt&0x0000ff00)>>8) == '6') );
+        if( valide ) { byte validator[24];
+            validator[20] = validator[23] = 0;
+            base64_decodeData( &validator[0], &key->b64cc[0].i8[0] );
+            ulong check = byteOrder_stringTOlongCC( &validator[0] );
+            if( !( valide = ( key->pass.value == check ) ) )
+                setError( "phrase", PHRASE_ERROR );
+        } else  setError( "format", fmt );
+        key->b64cc[3].i8[1] = ctx;
     return valide; }
-	else setError( "pending", FourCC("ctx") );
+    else setError( "pending", CONTXT_ERROR );
     return false;
 }
 
@@ -319,8 +318,9 @@ int crypt64_prepareContext( K64* key, byte mod )
         return true;
     } else if ( CurrentContext == key->pass.value ) {
         key->table = base64_getTable();
+        key->b64cc[3].u8[1] = mod;
         return true;
-    } setError( "context", FourCC("ctx") );
+    } setError( "context", CONTXT_ERROR );
     return false;
 }
 
@@ -334,7 +334,6 @@ int crypt64_releaseContext( K64* key )
         key->b64cc[4].i8[2] = key->table[2];
         key->b64cc[4].i8[3] = key->table[3];
         key->table = &key->b64cc[4].i8[0];
-        DEBUGLOG("context released")
     } return !CurrentContext;
 }
 
@@ -346,30 +345,31 @@ bool crypt64_setContext( K64* key, byte mod )
             key->table = base64_setTable( K64_table( key ) );
             key->b64cc[3].u8[1] = mod;
             return true;
-        } setError( "Initialization", FourCC("ini") );
+        } setError( "Initialization", NOT_INITIALIZED );
         return false;
     } else if( CurrentContext == key->pass.value ) {
         key->table = base64_getTable();
+        key->b64cc[3].u8[1] = mod;
         return true;
-    } setError( "CurrentContext", FourCC("ctx") );
+    } setError( "CurrentContext", CONTXT_ERROR );
     return false;
 }
 
 uint crypt64_encrypt( K64* key, const byte* data, uint size, char* dest )
 {
     uint outlen = 0;
-    if( crypt64_prepareContext( key, B64_FLAG ) ) {
+    if( crypt64_prepareContext( key, BASE64 ) ) {
         outlen = 16;
-	    memcpy( &dest[0], crypt64_createValidator( key ), outlen );
-		outlen += base64_encodeData( &dest[outlen], data, size );
-		crypt64_releaseContext( key );
+        memcpy( &dest[0], crypt64_createValidator( key ), outlen );
+        outlen += base64_encodeData( &dest[outlen], data, size );
+        crypt64_releaseContext( key );
     } return outlen;
 }
 
 uint crypt64_decrypt( K64* key, const char* data, byte* dest )
 {
     uint size = 0;
-    if( crypt64_prepareContext( key, B64_FLAG ) ) {
+    if( crypt64_prepareContext( key, BASE64 ) ) {
         if( crypt64_verifyValidator( key, (const byte*)data ) ) {
             size = base64_decodeData( &dest[0], &data[16] );
         } crypt64_releaseContext( key );
@@ -380,48 +380,48 @@ uint crypt64_binary_encrypt( K64* key, const byte* data, uint size, byte* dest )
 {
     uint out_size = 0;
     int pos = size;
-    if( crypt64_prepareContext( key, BIN_FLAG ) )
-	{
-		const char* CrpTable = base64_getTable();
-		const char* B64Table = base64_b64Table();
-		const char* header = crypt64_createValidator( key );
-		if ( header ) { out_size = 12;
+    if( crypt64_prepareContext( key, BINARY ) )
+    {
+        const char* CrpTable = base64_getTable();
+        const char* B64Table = base64_b64Table();
+        const char* header = crypt64_createValidator( key );
+        if ( header ) { out_size = 12;
             CodeTable = B64Table;
             base64_decodeData( dest, header );
             dest += 12;
             b64Frame frame = {0};
             while ( pos > 0 ) {
-				frame = asFrame(data);
-				frame.u8[3] = 0;
-				CodeTable = CrpTable;
+                frame = asFrame(data);
+                frame.u8[3] = 0;
+                CodeTable = CrpTable;
                 frame.u32 = base64_encodeFrame( frame ).u32;
                 CodeTable = B64Table;
                 frame.u32 = base64_decodeFrame( frame ).u32;
-				asFrame(dest).u32 = frame.u32;
-				out_size += 3;
-				if( frame.u8[3] ) break;
-                dest += 3; 
-				data += 3;
-				pos -= 3;
-			} clearAllErrors();
-		} CodeTable = CrpTable;
+                asFrame(dest).u32 = frame.u32;
+                out_size += 3;
+                if( frame.u8[3] ) break;
+                dest += 3;
+                data += 3;
+                pos -= 3;
+            } clearAllErrors();
+        } CodeTable = CrpTable;
 
     crypt64_releaseContext( key ); }
-	return out_size;
+    return out_size;
 }
 
 uint crypt64_binary_decrypt( K64* key, const byte* data, uint size, byte* dest )
 {
-    if( crypt64_prepareContext( key, BIN_FLAG ) )
+    if( crypt64_prepareContext( key, BINARY ) )
     {
         const char* CrpTable = base64_getTable();
         const char* B64Table = base64_b64Table();
 
         CodeTable = B64Table;
-		char header[24];
-		base64_encodeData( &header[0], data, 12 );
+        char header[24];
+        base64_encodeData( &header[0], data, 12 );
         int pos = size - 12;
-		data += 12;
+        data += 12;
         size = 0;
         CodeTable = CrpTable;
         if( crypt64_verifyValidator( key, (const byte*)&header[0] ) ) {
@@ -431,13 +431,13 @@ uint crypt64_binary_decrypt( K64* key, const byte* data, uint size, byte* dest )
                 frame.u32 = base64_encodeFrame( asFrame( data ) ).u32;
                 CodeTable = CrpTable;
                 frame.u32 = base64_decodeFrame( frame ).u32;
-				asFrame(dest) = frame;
-				size += 3;
-				if( frame.u8[3] ) break;
-				dest += 3;
-				data += 3;
+                asFrame(dest) = frame;
+                size += 3;
+                if( frame.u8[3] ) break;
+                dest += 3;
+                data += 3;
                 pos -= 3;
-			} clearAllErrors();
+            } clearAllErrors();
         } crypt64_releaseContext( key );
     } else size = 0;
     return size;
@@ -447,23 +447,30 @@ uint crypt64_binary_decrypt( K64* key, const byte* data, uint size, byte* dest )
 uint crypt64_encryptFile( K64* key, const char* srcFile, const char* dstFile )
 {
     ptval size = 0;
-    if( crypt64_prepareContext( key, B64_FLAG ) )
+    if( crypt64_prepareContext( key, BASE64 ) )
     {
         FILE* dst = fopen( dstFile, "w" );
         if  (!dst) {
-            setError( setTempf("opening file %s", dstFile), FourCC("dst") ); 
+            setError( setTempf("opening file %s", dstFile), OUTPUT_ERROR );
             return 0;
         }
         B64S* src = (B64S*)base64_createFileStream( srcFile, "re" );
         if ( !src ) {
-            setError( setTempf("opening file %s", srcFile), FourCC("src") );
+            setError( setTempf("opening file %s", srcFile), INPUTS_ERROR );
             return 0;
         }
         size += fwrite( crypt64_createValidator( key ), 1, 16, dst );
 
         b64Frame data = {0};
-        while( ( data = base64_getFrame( src ) ).u32 )
-            size += fwrite( &data.u8[0], 1, 4, dst );
+        byte buf[1024];
+        ptval siz = 0;
+
+        do { siz = base64_sread( &buf[0], 4, 256, src );
+            size += ( fwrite( &buf[0], 4, siz, dst ) * 4 );
+        } while( siz == 256 );
+
+        //while( ( data = base64_getFrame( src ) ).u32 )
+        //    size += fwrite( &data.u8[0], 1, 4, dst );
 
         data.i8[0] = '=';
         size += fwrite( &data.i8[0], 1, 1, dst );
@@ -475,27 +482,40 @@ uint crypt64_encryptFile( K64* key, const char* srcFile, const char* dstFile )
 
 uint crypt64_binary_encryptFile( K64* key, const char* srcFile, const char* dstFile )
 {
+    DEBUGLOG("enter")
     ptval size = 0;
     const char* B64Table = base64_b64Table();
-    if( crypt64_prepareContext( key, BIN_FLAG ) )
+    if( crypt64_prepareContext( key, BINARY ) )
     {
         const char* validator = crypt64_createValidator( key );
         B64S* src = (B64S*)base64_createFileStream( srcFile, "re" );
-        if ( !src ) { setErrorCode( FourCC("src") ); return 0; }
+        if ( !src ) { setError( setTempf("opening file %s", srcFile), INPUTS_ERROR ); return 0; }
         const char* CrpTable = base64_getTable();
         CodeTable = B64Table;
         B64S* dst = (B64S*)base64_createFileStream( dstFile, "wd" );
-        if ( !dst ) { setErrorCode( FourCC("dst") ); return 0; }
+        if ( !dst ) { setError( setTempf("opening file %s", dstFile), OUTPUT_ERROR ); return 0; }
         size += base64_swrite( (const byte*)validator, 1, 16, dst );
-        
-		b64Frame data;
+        /*
+        b64Frame data;
         CodeTable = CrpTable;
-		while( (data = base64_getFrame( src )).u32 ) {
+        while( (data = base64_getFrame( src )).u32 ) {
            CodeTable = B64Table;
                size += base64_putFrame( dst, data );
-	       CodeTable = CrpTable;
-		}
- 
+           CodeTable = CrpTable;
+        }
+        */
+
+        byte buf[1024];
+        ptval siz = 0;
+        printf("begin!\n");
+        do{ CodeTable = CrpTable;
+            siz = base64_sread( &buf[0], 3, 256, src );
+            printf("read %i frames\n",siz);
+            CodeTable = B64Table;
+            size += (base64_swrite( &buf[0], 3, siz, dst ) * 3);
+        } while( siz == 256 );
+        CodeTable = CrpTable;
+
         base64_destream( (B64S*)src );
         base64_destream( (B64S*)dst );
 
@@ -506,17 +526,36 @@ uint crypt64_binary_encryptFile( K64* key, const char* srcFile, const char* dstF
 uint crypt64_decryptFile( K64* key, const char* srcFileName, const char* dstFileName )
 {
     ptval size = 0;
-    if( crypt64_prepareContext( key, B64_FLAG ) )
+    if( crypt64_prepareContext( key, BASE64 ) )
     {
-		char header[24];
-        FILE* src = fopen( srcFileName, "r" );
+        char header[24];
+        FILE* src = fopen( srcFileName, "r");
+        if ( !src ) {
+            setError( setTempf( "opening file %s", srcFileName), INPUTS_ERROR );
+            return 0;
+        }
+
         fread( &header[0], 1, 16, src );
         if( crypt64_verifyValidator( key, (const byte*)&header[0] ) ) {
-            B64F* dst = base64_createFileStream( dstFileName, "wd" );
-            b64Frame fr = {0};
+            B64S* dst = (B64S*)base64_createFileStream( dstFileName, "wd" );
+            if ( !dst ) {
+                setError( setTempf( "opening file %s", dstFileName ), OUTPUT_ERROR );
+                return 0;
+            }
+
+            ptval siz = 0;
+            byte buf[1024];
+            do { siz = fread( &buf[0], 4, 256, src );
+                size += (base64_swrite( &buf[0], 4, siz, dst ) * 3);
+            } while( siz == 256 );
+
+            /*
+            b64Frame fr = { 0 };
             while( fread( &fr, 1, 4, src ) ) {
                 base64_putFrame( (b64Stream*)dst, fr );
-            } base64_destream( (b64Stream*)dst );
+            } */
+
+            base64_destream( (b64Stream*)dst );
         } fclose(src);
 
     crypt64_releaseContext( key ); }
@@ -529,15 +568,16 @@ uint crypt64_binary_decryptFile( K64* key, const char* srcFileName, const char* 
     const char* B64Table = base64_b64Table();
     CodeTable = B64Table;
     B64S* src = (B64S*)base64_createFileStream( srcFileName, "re" );
-    if ( !src ) { setErrorCode( FourCC("src") ); return 0; }
+    if ( !src ) { setError( setTempf("opening file %s", srcFileName), INPUTS_ERROR ); return 0; }
     char header[24];
-	base64_sread( (byte*)&header, 1, 16, src );
-    if( crypt64_prepareContext( key, BIN_FLAG ) )
+    base64_sread( (byte*)&header, 1, 16, src );
+    if( crypt64_prepareContext( key, BINARY ) )
     {
         const char* CrpTable = base64_getTable();
         if( crypt64_verifyValidator( key, (const byte*)&header[0] ) ) {
             B64S* dst = (B64S*)base64_createFileStream( dstFileName, "wd" );
-            if ( !dst ) { setErrorCode( FourCC("dst") ); return size; }
+            if ( !dst ) { setError( setTempf("opening file %s", srcFileName), OUTPUT_ERROR ); return size; }
+            /*
             b64Frame fr = {1};
             CodeTable = B64Table;
             while ( (fr = base64_getFrame( src )).u32 ) {
@@ -545,9 +585,18 @@ uint crypt64_binary_decryptFile( K64* key, const char* srcFileName, const char* 
                 size += base64_putFrame( dst, fr );
                 CodeTable = B64Table;
             } CodeTable = CrpTable;
+            */
+
+            ptval siz = 0;
+            byte buf[1024];
+            do{ CodeTable = B64Table;
+                siz = base64_sread(&buf[0], 4, 256, src);
+                CodeTable = CrpTable;
+                size += (base64_swrite(&buf[0], 4, siz, dst) * 3);
+            } while( siz == 256 );
         }
 
-	crypt64_releaseContext( key ); }
+    crypt64_releaseContext( key ); }
     return size;
 }
 
@@ -557,10 +606,10 @@ uint crypt64_binary_decryptFile( K64* key, const char* srcFileName, const char* 
 // should be now the content of the passed 'destination' file.
 uint crypt64_decryptStdIn( K64* key, FILE* destination )
 {
-	uint size = 0;
-    if( crypt64_prepareContext( key, B64_FLAG ) )
-	{ 
-		char header[24];
+    uint size = 0;
+    if( crypt64_prepareContext( key, BASE64 ) )
+    {
+        char header[24];
         fread( &header[0], 1, 16, stdin );
         if( crypt64_verifyValidator( key, (const byte*)&header[0] ) ) { b64Frame pass;
             b64Stream* b64in = (b64Stream*)base64_createFileStream( 0, "rd" );
@@ -569,8 +618,8 @@ uint crypt64_decryptStdIn( K64* key, FILE* destination )
             } size = (uint)b64in->pos * 3;
             base64_destream( b64in );
         }
-    
-	crypt64_releaseContext( key ); }
+
+    crypt64_releaseContext( key ); }
     return size;
 }
 
@@ -579,9 +628,9 @@ uint crypt64_decryptStdIn( K64* key, FILE* destination )
 // of encrypted data which has been streamed to file 'destination'.
 uint crypt64_encryptStdIn( K64* key, FILE* destination )
 {
-	uint size = 0;
-    if ( crypt64_prepareContext( key, B64_FLAG ) )
-	{
+    uint size = 0;
+    if ( crypt64_prepareContext( key, BASE64 ) )
+    {
         fwrite( crypt64_createValidator( key ), 1, 16, destination );
         b64Stream* b64in = (b64Stream*)base64_createFileStream( 0, "re" );
         uint size = 16; b64Frame pass;
@@ -591,7 +640,7 @@ uint crypt64_encryptStdIn( K64* key, FILE* destination )
               && pass.i8[2] != '=' && pass.i8[3] != '=' );
         base64_destream( b64in );
 
-    crypt64_releaseContext( key ); } 
+    crypt64_releaseContext( key ); }
     return size;
 }
 
@@ -613,7 +662,7 @@ k64Chunk crypt64_encryptFrame( K64* key64, k64Chunk threeByte )
             CodeTable = key64->table;
             return base64_encodeFrame( threeByte );
 //        } setError( "direction", FourCC("dir") );
-	} else setError( "context", FourCC("ctx") );
+    } else setError( "context", CONTXT_ERROR );
     return base64_Nuller();
 }
 
@@ -622,9 +671,9 @@ k64Chunk crypt64_decryptFrame( K64* key64, k64Chunk fourChars )
     if( CurrentContext == key64->pass.value ) {
 //        if( K64_moduse( key64, 'd' ) == 0x40 ) {
             key64->table;
-			return base64_decodeFrame( fourChars );
-	//	} setError( "direction", FourCC("dir") );
-	} else setError( "context", FourCC("ctx") );
+            return base64_decodeFrame( fourChars );
+    //  } setError( "direction", FourCC("dir") );
+    } else setError( "context", CONTXT_ERROR );
     return base64_Nuller();
 }
 
@@ -633,11 +682,11 @@ k64Chunk crypt64_binary_encryptFrame( K64* key64, k64Chunk threeByte )
     if( CurrentContext == key64->pass.value ) {
  //       if (K64_moduse( key64, 'e' ) == 0x10 ) {
             CodeTable = key64->table;
-			threeByte = base64_encodeFrame( threeByte );
-			if ( threeByte.u8[3] ) { CodeTable = base64_b64Table();
-				return base64_decodeFrame( threeByte );	}
-//		} setError( "direction", FourCC("dir") );
-    } else setError( "context", FourCC("ctx") );
+            threeByte = base64_encodeFrame( threeByte );
+            if ( threeByte.u8[3] ) { CodeTable = base64_b64Table();
+                return base64_decodeFrame( threeByte ); }
+//      } setError( "direction", FourCC("dir") );
+    } else setError( "context", CONTXT_ERROR );
     return base64_Nuller();
 }
 
@@ -645,30 +694,32 @@ k64Chunk crypt64_binary_decryptFrame( K64* key64, k64Chunk threeByte )
 {
     if( CurrentContext == key64->pass.value ) {
  //       if( K64_moduse( key64, 'd' ) == 0x10 ) {
-			CodeTable = base64_b64Table();
-			threeByte = base64_encodeFrame( threeByte );
+            CodeTable = base64_b64Table();
+            threeByte = base64_encodeFrame( threeByte );
             if (threeByte.u8[3]) { CodeTable = key64->table;
-				return base64_decodeFrame( threeByte ); }
-//		} else setError( "direction", FourCC("dir") );
+                return base64_decodeFrame( threeByte ); }
+//      } else setError( "direction", FourCC("dir") );
     } else setError( "context", FourCC("dir") );
     return base64_Nuller();
 }
 
 static void cleansenCrypstream( K64F* stream ) {
-	junk_drop( stream->key );
-	base64_destream( &stream->b64 );
+    if (stream->key) {
+        crypt64_releaseContext( stream->key );
+        stream->key = NULL;
+    } base64_destream( &stream->b64 );
 }
 
-K64F* crypt64_createFileStream( const char* pass, const char* path, const char* mode )
+K64F* crypt64_createFileStream( K64* key, const char* path, const char* mode )
 {
     int    mod = ENCODE;
-	fourCC set = BASE64;
+    fourCC set = BASE64;
     int    dir = OUTPUT;
 
-	K64F* stream = (K64F*)junk_allocateNewObject( (cmDtFunc)&cleansenCrypstream,
+    K64F* stream = (K64F*)junk_allocateNewObject( (cmDtFunc)&cleansenCrypstream,
                                sizeof(k64Stream) );
-	char fmod[8];
-	char* fm = strcpy( &fmod[0], mode ); 
+    char fmod[8];
+    char* fm = strcpy( &fmod[0], mode );
     while (*fm) switch ( *fm++ ) {
     case 'b': set = BINARY; break;
     case 'd': mod = DECODE; break;
@@ -677,97 +728,98 @@ K64F* crypt64_createFileStream( const char* pass, const char* path, const char* 
     case 'w': dir = OUTPUT; break;
     }
 
-	fm = &fmod[0];
+    fm = &fmod[0];
     if ( set == BINARY )
-        do if (*fm == 'd') *fm = 'e'; 
+        do if (*fm == 'd') *fm = 'e';
            else if (*fm == 'e') *fm = 'd';
         while ( *++fm );
-	
-	uint m = base64_initNewB64StreamStruct( &fmod[0], &stream->b64 );
-	fm = (char*)&m;
-	if (( fm[0] == 'd' && fm[1] == 'w' )
-	 || ( fm[0] == 'e' && fm[1] == 'r' ) 
-	 || ( set == BINARY ) ) fm[2] = 'b';
-	 
-	if ( base64_initB64FileStreamStruct( (B64F*)&stream->b64, path, m ) ) {
-		stream->key = crypt64_createKeyFromPass( pass );
-		stream->b64.flg[1] = CRYPST;
-	}
+
+    uint m = base64_initNewB64StreamStruct( &fmod[0], &stream->b64 );
+    fm = (char*)&m;
+    if (( fm[0] == 'd' && fm[1] == 'w' )
+     || ( fm[0] == 'e' && fm[1] == 'r' )
+     || ( set == BINARY ) ) fm[2] = 'b';
+
+    if ( base64_initB64FileStreamStruct( (B64F*)&stream->b64, path, m ) ) {
+        stream->key = key;
+        //stream->b64.flg[1] = CRYPST;
+    }
 
     stream->val = NULL;
     int success = false;
     switch ( dir ) {
     case INPUT: {
-        //////////////////////////////////////////////////////////////////	
+        //////////////////////////////////////////////////////////////////
         switch ( mod ) {
         case DECODE: {
             //////////////////////////////////////////////////////////
+        if ( crypt64_prepareContext( stream->key, set == BINARY ? BINARY : BASE64 ) ) {
             char header[24];
             switch ( set ) {
             case BINARY: {
-                stream->enc = stream->key->table = base64_b64Table();
-                base64_setTable( stream->key->table );
-                base64_sread( (byte*)&header[0], 1, 16, &stream->b64 ); // 12 ?
+                stream->enc = base64_b64Table();
+                stream->dec = base64_setTable( stream->key->table );
+                CodeTable = stream->enc;
+                base64_sread( (byte*)&header[0], 1, 16, &stream->b64 );
             } break;
             case BASE64: {
                 fread( &header[0], 1, 16, (FILE*)stream->b64.dat );
             } break; }
-            if( crypt64_prepareContext( stream->key, B64_FLAG ) ) {
-                success = crypt64_verifyValidator( stream->key, (const byte*)&header[0] );
-				if ( success && set == BINARY ) stream->dec = stream->key->table;
-            }
-            ///////////////////////////////////////////////////////////
+            success = crypt64_verifyValidator( stream->key, (const byte*)&header[0] );
+        } ///////////////////////////////////////////////////////////
         } break;
         case ENCODE: {
             ///////////////////////////////////////////////////////////
-            if( crypt64_prepareContext( stream->key, set == BINARY ? BIN_FLAG : B64_FLAG ) ) {
+            if( crypt64_prepareContext( stream->key, set == BINARY ? BINARY : BASE64 ) ) {
                 stream->val = (const byte*)crypt64_createValidator( stream->key );
-				if ( set == BINARY ) {
-					stream->enc = base64_getTable();
-					stream->dec = base64_b64Table();
-				} success = true;
+                if ( set == BINARY ) {
+                    stream->enc = base64_getTable();
+                    stream->dec = base64_b64Table();
+                } success = true;
             }
         } break;
         }   } break;
     case OUTPUT: {
-        //////////////////////////////////////////////////////////////////		
+        //////////////////////////////////////////////////////////////////
         switch (mod) {
         case DECODE: {
             //////////////////////////////////////////////////////////
-            if( crypt64_prepareContext( stream->key, set == BINARY ? BIN_FLAG : B64_FLAG ) ) {
+            if( crypt64_prepareContext( stream->key, set == BINARY ? BINARY : BASE64 ) ) {
                 stream->val = (const byte*)"blub";
-				if ( set == BINARY ) {
-					stream->enc = base64_getTable();
-					stream->dec = base64_b64Table();
-				} success = true;
+                if ( set == BINARY ) {
+                    stream->enc = base64_getTable();
+                    stream->dec = base64_b64Table();
+                } success = true;
             }
             //////////////////////////////////////////////////////////
         } break;
         case ENCODE: {
             //////////////////////////////////////////////////////////
-            switch (mod) {
+            switch (set) {
             case BINARY: {
-                if( crypt64_prepareContext( stream->key, BIN_FLAG ) ) {
+                if( crypt64_prepareContext( stream->key, BINARY ) ) {
                     const char* validator = crypt64_createValidator( stream->key );
-					stream->dec = base64_getTable();
-					stream->enc = base64_b64Table();
+                    stream->dec = base64_getTable();
+                    stream->enc = base64_b64Table();
                     CodeTable = stream->enc;
                     base64_swrite( (const byte*)validator, 1, 16, &stream->b64 );
+                    stream->key->b64cc[3].i8[1] = BINARY;
                     CodeTable = stream->dec;
                     success = true;
                 }
             } break;
                 //////////////////////////////////////////////////////////
             case BASE64: {
-                if ( crypt64_prepareContext( stream->key, B64_FLAG ) ) {
+                if ( crypt64_prepareContext( stream->key, BASE64 ) ) {
                     fwrite( crypt64_createValidator( stream->key ), 1, 16, (FILE*)stream->b64.dat );
+                    stream->key->b64cc[3].i8[1] = BASE64;
                     success = true;
                 }
             } break;
-            }	} break;
+            }   } break;
             //////////////////////////////////////////////////////////
         } break;
-        //////////////////////////////////////////////////////////////////    
+        //////////////////////////////////////////////////////////////////
     }
     }
 
@@ -775,40 +827,40 @@ K64F* crypt64_createFileStream( const char* pass, const char* path, const char* 
     else return stream;
 }
 
-int delayedVerification( K64F* cryps, byte* data ) 
+int delayedVerification( K64F* cryps, byte* data )
 {
-	int size = 0;
-	if ( cryps->b64.flg[2] == 'r' ) {
-		if( cryps->key->b64cc[3].i8[0] == ENCODE ) {
-			if( cryps->key->b64cc[3].i8[1] == BINARY ) {
-				CodeTable = base64_b64Table();
-				size = base64_decodeData( data, (const char*)cryps->val );
-			} else {
-				memcpy( data, cryps->val, size = 16 );
-			}
-		} cryps->val = 0;
-	} else 	
-	if ( cryps->b64.flg[2] == 'w' ) {
-		if( cryps->key->b64cc[3].i8[0] == ENCODE ) {
-			if( cryps->key->b64cc[3].i8[1] == BINARY ) {
+    int size = 0;
+    if ( cryps->b64.flg[2] == 'r' ) {
+        if( cryps->key->b64cc[3].i8[0] == ENCODE ) {
+            if( cryps->key->b64cc[3].i8[1] == BINARY ) {
+                CodeTable = base64_b64Table();
+                size = base64_decodeData( data, (const char*)cryps->val );
+            } else {
+                memcpy( data, cryps->val, size = 16 );
+            }
+        } cryps->val = 0;
+    } else
+    if ( cryps->b64.flg[2] == 'w' ) {
+        if( cryps->key->b64cc[3].i8[0] == ENCODE ) {
+            if( cryps->key->b64cc[3].i8[1] == BINARY ) {
                 CodeTable = base64_b64Table();
                 base64_swrite( (const byte*)cryps->val, 1, 16, &cryps->b64 );
             } else fwrite( cryps->val, 1, 16, (FILE*)cryps->b64.dat );
         } else { size = 16;
-			if( cryps->key->b64cc[3].i8[1] == BINARY ) {
-				size -= 4;
-				char header[24];
-				const char* stored = base64_getTable();
-				CodeTable = base64_b64Table();
-				base64_encodeData( &header[0], data, 12 );
-				cryps->val = (const byte*)&header[0];
-				CodeTable = stored;
-			} else cryps->val = data;
-			if( !crypt64_verifyValidator( cryps->key, cryps->val ) )
-				size = 0;
+            if( cryps->key->b64cc[3].i8[1] == BINARY ) {
+                size -= 4;
+                char header[24];
+                const char* stored = base64_getTable();
+                CodeTable = base64_b64Table();
+                base64_encodeData( &header[0], data, 12 );
+                cryps->val = (const byte*)&header[0];
+                CodeTable = stored;
+            } else cryps->val = data;
+            if( !crypt64_verifyValidator( cryps->key, cryps->val ) )
+                size = 0;
         } cryps->val = 0;
-	}
-	return size;
+    }
+    return size;
 }
 
 // in case 'binary encrypted' reading, the actually passed 'dst' buffer MUST allocate
@@ -816,182 +868,230 @@ int delayedVerification( K64F* cryps, byte* data )
 // so the destination buffer itself can act as de/en cryption buffer during the progress..
 uint crypt64_nonbuffered_sread( byte* dst, uint size, uint count, K64F* cryps )
 {
-	if ( CurrentContext == cryps->key->pass.value )	{
-	int read = 0;
+    if ( CurrentContext == cryps->key->pass.value ) {
+    int read = 0;
 
-		if( cryps->val )
-			dst += ( read = delayedVerification( cryps, dst ) );
-		
+        if( cryps->val )
+            dst += ( read = delayedVerification( cryps, dst ) );
+
         if( cryps->key->b64cc[3].i8[1] == BINARY ) {
             CodeTable = cryps->enc;
             dst[ base64_sread( dst, size, count, &cryps->b64 ) ] = 0;
             CodeTable = cryps->dec;
             read += base64_decodeData( dst, (const char*)dst );
         } else {
-			CodeTable = cryps->key->table;
+            CodeTable = cryps->key->table;
             read += base64_sread( dst, size, count, &cryps->b64 );
         }
 
-	return read; }
-	
-	setError( "context", FourCC("ctx") );
-	return 0;
+    return read; }
+
+    setError( "context", CONTXT_ERROR );
+    return 0;
 }
 
 // if sure the passed dst buffer would be allocated much larger then
 // the count on bytes which are requested (via 'size' parameter) it
-// is apropriate using crypt64_nonbuffered_sread() overload instead  
+// is apropriate using crypt64_nonbuffered_sread() overload instead
 uint crypt64_sread( byte* dst, uint size, uint count, K64F* cryps )
 {
-	if ( CurrentContext == cryps->key->pass.value ) {
-	int read = 0;
+    if ( CurrentContext == cryps->key->pass.value ) {
+    int read = 0;
 
-        if( cryps->val ) 
-			dst += ( read = delayedVerification( cryps, dst ) );
-		
+        if( cryps->val )
+            dst += ( read = delayedVerification( cryps, dst ) );
+
         if( cryps->key->b64cc[3].i8[1] == BINARY ) {
-		MakeArray( byte, buff, (size * count * 4) / 3 )
-            CodeTable = cryps->enc;
-            buff[ base64_sread( &buff[0], size, count, &cryps->b64 ) ] = 0;
-            CodeTable = cryps->dec;
-            read += base64_decodeData( dst, (const char*)&buff[0] );
-		CleanArray( buff )
+            uint siz = size * count;
+            siz += ((3 - (siz%3)) % 3);
+            b64Frame data = {0};
+            byte* end = dst + siz;
+            do{ CodeTable = cryps->enc;
+                data = base64_getFrame( &cryps->b64 );
+                CodeTable = cryps->dec;
+                *(b64Frame*)dst = base64_decodeFrame( data );
+                dst += 3;
+            } while( dst < end );
+            read += (siz / size);
+    //    MakeArray( byte, buff, (size * count * 4) / 3 )
+    //        CodeTable = cryps->enc;
+    //        buff[ base64_sread( &buff[0], size, count, &cryps->b64 ) ] = 0;
+    //        CodeTable = cryps->dec;
+    //        read += base64_decodeData( dst, (const char*)&buff[0] );
+    //    CleanArray( buff )
         } else {
-			CodeTable = cryps->key->table;
+            CodeTable = cryps->key->table;
             read += base64_sread( dst, size, count, &cryps->b64 );
         }
 
-	return read; }
-	
-	setError( "context", FourCC("ctx") );
-	return 0;
+    return read; }
+
+    setError( "context", CONTXT_ERROR );
+    return 0;
 }
 
 uint crypt64_swrite( const byte* src, uint size, uint count, K64F* cryps )
 {
     if( CurrentContext == cryps->key->pass.value ) {
-	int write = 0;
-        
-		if( cryps->val ) {
-			write = delayedVerification( cryps, (byte*)src );
-			if ( write == 0 ) return (uint)junk_drop( cryps );
-			else src += write;
-		}
-        
-		if( cryps->key->b64cc[3].i8[1] == BINARY ) {
-		MakeArray( char, tmpdat, BASE64_ENCODED_SIZE( size * count ) )
-            CodeTable = cryps->enc;
-            tmpdat[ size = base64_encodeData( tmpdat, src, size * count ) ] = 0;
-            CodeTable = cryps->dec;
-            write += base64_swrite( (const byte*)tmpdat, 1, size, &cryps->b64 );
-		CleanArray( tmpdat )
+    int write = 0;
+
+        if( cryps->val ) {
+            write = delayedVerification( cryps, (byte*)src );
+            if ( write == 0 ) return (uint)junk_drop( cryps );
+            else src += write;
+        }
+
+        if( cryps->key->b64cc[3].i8[1] == BINARY ) {
+            uint siz = (size * count);
+            siz += ((3 - (siz % 3)) % 3); //  BASE64_ENCODED_SIZE( size * count );
+            const byte* end = src + siz;
+            b64Frame data = {0};
+            do{ CodeTable = cryps->enc;
+                data.u32 = *(uint*)src;
+                data = base64_encodeFrame( data );
+                CodeTable = cryps->dec;
+                base64_putFrame( &cryps->b64, data );
+                src += 3;
+            } while (src < end);
+            write += (siz / size);
+        //MakeArray( char, tmpdat, enc_siz )
+  //          CodeTable = cryps->enc;
+  //          tmpdat[ size = base64_encodeData( tmpdat, src, size * count ) ] = 0;
+  //          CodeTable = cryps->dec;
+  //          write += base64_swrite( (const byte*)tmpdat, 1, size, &cryps->b64 );
+        //CleanArray( tmpdat )
         } else {
             CodeTable = cryps->key->table;
             write += base64_swrite( src, size, count, &cryps->b64 );
         }
 
-	return write; }
-    
-	setError( "context", FourCC("ctx") );
+    return write; }
+
+    setError( "context", CONTXT_ERROR );
     return 0;
 }
- 
+
 b64Frame erstmal_noch_der_header( b64Frame huch, K64F* vonDa )
  {
-	if ( vonDa->b64.flg[1] == OUTPUT ) {
-		K64F* nachDa = vonDa;
-		if ( nachDa->val ) {
-			byte* header;
-			if ( FourCC( nachDa->val ) != FourCC( "blub" ) ) {
-				byte* header = (byte*)junk_allocateJunkChunk( 24 );
-				*(uint*)header = FourCC("blub");
-				nachDa->val = header;
-				header += 4;
-				*(uint*)header = FourCC("plop");
-			}
-			int fram = crypt64_frameSize( nachDa );
-			int size = 0;
-			header = (byte*)(nachDa->val + 4);
-			while ( FourCC( header ) != FourCC( "plop" ) ) {
-				header += fram;
-				size += fram;
-			} *(uint*)*header = huch.u32;
-			header += fram;
-			size += fram;
-			if ( size == (4 * fram) ) {
-				*header = '\0';
-				header = (byte*)nachDa->val;
-				delayedVerification( nachDa, header+4 );
-				junk_drop( header );
-			} else {
-				*(uint*)header = FourCC("plop");
-			} huch.u32 = (uint)fram;
-		}
+    if ( vonDa->b64.flg[1] == OUTPUT ) {
+        K64F* nachDa = vonDa;
+        if ( nachDa->val ) {
+            byte* header;
+            if ( FourCC( nachDa->val ) != FourCC( "blub" ) ) {
+                byte* header = (byte*)junk_allocateJunkChunk( 24 );
+                *(uint*)header = FourCC("blub");
+                nachDa->val = header;
+                header += 4;
+                *(uint*)header = FourCC("plop");
+            }
+            int fram = crypt64_frameSize( nachDa );
+            int size = 0;
+            header = (byte*)(nachDa->val + 4);
+            while ( FourCC( header ) != FourCC( "plop" ) ) {
+                header += fram;
+                size += fram;
+            } *(uint*)*header = huch.u32;
+            header += fram;
+            size += fram;
+            if ( size == (4 * fram) ) {
+                *header = '\0';
+                header = (byte*)nachDa->val;
+                delayedVerification( nachDa, header+4 );
+                junk_drop( header );
+            } else {
+                *(uint*)header = FourCC("plop");
+            } huch.u32 = (uint)fram;
+        }
     } else if( vonDa->key->b64cc[3].i8[0] == ENCODE && vonDa->val ) {
 
-		if ( FourCC( vonDa->val ) == FourCC( "blub" ) ) {
-			byte* header = (byte*)junk_allocateJunkChunk( 24 );
-			int size = delayedVerification( vonDa, header );
-			*(uint*)&header[size] = FourCC( "plop" );
-			vonDa->val = header;
-		} 
-		if ( FourCC( vonDa->val ) == FourCC( "plop" ) ) {
-			vonDa->val -= crypt64_frameSize( vonDa );
-			junk_drop( (void*)vonDa->val );
-			huch.u32 = byteOrder_stringTOfourCC( "plop" );
-			vonDa->val = 0;
-		} else {
-			huch.u32 = *(uint*)vonDa->val;
-			vonDa->val += crypt64_frameSize( vonDa );
-		}
-	} return huch;
+        if ( FourCC( vonDa->val ) == FourCC( "blub" ) ) {
+            byte* header = (byte*)junk_allocateJunkChunk( 24 );
+            int size = delayedVerification( vonDa, header );
+            *(uint*)&header[size] = FourCC( "plop" );
+            vonDa->val = header;
+        }
+        if ( FourCC( vonDa->val ) == FourCC( "plop" ) ) {
+            vonDa->val -= crypt64_frameSize( vonDa );
+            junk_drop( (void*)vonDa->val );
+            huch.u32 = byteOrder_stringTOfourCC( "plop" );
+            vonDa->val = 0;
+        } else {
+            huch.u32 = *(uint*)vonDa->val;
+            vonDa->val += crypt64_frameSize( vonDa );
+        }
+    } return huch;
  }
- 
+
 b64Frame crypt64_getYps( K64F* vonDa )
 {
-	if( CurrentContext == vonDa->key->pass.value ) {
-		b64Frame yps = {0};
-		yps = erstmal_noch_der_header( yps, vonDa );
-		int bin = vonDa->key->b64cc[3].i8[1] == BINARY;
-		if( yps.u32 && yps.u32 != FourCC("plop") ) {
-			if (bin) { CodeTable = vonDa->dec;
-				return base64_decodeFrame( yps );
-			} return yps;
-		} else { // if header received completely:
-			if( bin ) { CodeTable = vonDa->enc;
-				yps = base64_getFrame( (b64Stream*)&vonDa->b64 );
-						CodeTable = vonDa->dec;
-				return base64_decodeFrame( yps );
-			} CodeTable = vonDa->key->table;
-			return base64_getFrame( (b64Stream*)&vonDa->b64 );
-		}
-	} setError( "context", FourCC("ctx") );
-	return base64_Nuller();
+    if( CurrentContext == vonDa->key->pass.value ) {
+        b64Frame yps = {0};
+        yps = erstmal_noch_der_header( yps, vonDa );
+        int bin = vonDa->key->b64cc[3].i8[1] == BINARY;
+        if( yps.u32 && yps.u32 != FourCC("plop") ) {
+            if (bin) { CodeTable = vonDa->dec;
+                return base64_decodeFrame( yps );
+            } return yps;
+        } else { // if header received completely:
+            if( bin ) { CodeTable = vonDa->enc;
+                yps = base64_getFrame( (b64Stream*)&vonDa->b64 );
+                        CodeTable = vonDa->dec;
+                return base64_decodeFrame( yps );
+            } CodeTable = vonDa->key->table;
+            return base64_getFrame( (b64Stream*)&vonDa->b64 );
+        }
+    } setError( "context", CONTXT_ERROR );
+    return base64_Nuller();
 }
 
 uint crypt64_putYps( k64Chunk dieses, K64F* nachDa )
 {
-	if( CurrentContext == nachDa->key->pass.value ) {
-		uint huch = erstmal_noch_der_header( dieses, nachDa ).u32;
-		if ( huch ) return huch;
-		// if complete header is written to the stream
-		if( nachDa->key->b64cc[3].i8[1] == BINARY ) {
-			CodeTable = nachDa->enc;
-			b64Frame inter = base64_encodeFrame( dieses );
-			CodeTable = nachDa->dec;
-			return base64_putFrame( &nachDa->b64, inter );
-		} else {
-			CodeTable = nachDa->key->table;
-			return base64_putFrame( &nachDa->b64, dieses );
-		}
-	} setError( "context", FourCC("ctx") );
-	return 0;
+    if( CurrentContext == nachDa->key->pass.value ) {
+        uint huch = erstmal_noch_der_header( dieses, nachDa ).u32;
+        if ( huch ) return huch;
+        // if complete header is written to the stream
+        if( nachDa->key->b64cc[3].i8[1] == BINARY ) {
+            CodeTable = nachDa->enc;
+            b64Frame inter = base64_encodeFrame( dieses );
+            CodeTable = nachDa->dec;
+            return base64_putFrame( &nachDa->b64, inter );
+        } else {
+            CodeTable = nachDa->key->table;
+            return base64_putFrame( &nachDa->b64, dieses );
+        }
+    } setError( "context", CONTXT_ERROR );
+    return 0;
 }
-  
+
 int crypt64_frameSize( K64F* stream )
 {
     if (stream->key->b64cc[3].i8[1] == 0x10) return 3;
     else return stream->b64.flg[3];
+}
+
+int crypt64_position( K64F* stream )
+{
+    if ((stream->b64.flg[2] & FILESTREAM) == FILESTREAM)
+        return ftell( (FILE*)stream->b64.dat );
+    else
+        return stream->b64.pos;
+}
+
+int crypt64_canStream( K64F* stream )
+{
+    return base64_canStream( &stream->b64 );
+}
+
+void crypt64_flush( K64F* stream )
+{
+    if ( (stream->b64.flg[2] & FILESTREAM) == FILESTREAM )
+        fflush( (FILE*)stream->b64.dat );
+}
+
+void crypt64_close( K64F* stream )
+{
+    cleansenCrypstream( stream );
+    junk_drop( stream );
 }
 
 void crypt64_Initialize( bool init )
@@ -1018,28 +1118,28 @@ int main(int argc,char**argv)
     base64_Initialize();
     DEBUGLOG("srand((uint)(ptval)pool_InitializeCycle())")
     srand((uint)(ptval)pool_InitializeCycle());
-	
-	if ( isModus("test") ) {
-		printf("\nTest Modus!\n");
-		ulong hashA;
-		sscanf( rawNext('t'), "%llu", &hashA );
-		printf( "hashA: %llu\n", hashA );
-		int hartG;
-		sscanf( nextRaw(), "%i", &hartG );
-		ulong hashB;
-		sscanf( nextRaw(), "%llu", &hashB );
-		printf( "hashB: %llu\n", hashB );
-		ulong lastF;
-		sscanf( nextRaw(), "%llu", &lastF );
-		
-		if ( haerteGradFromMerkeHart( hashA, hartG, hashB, &lastF ) ) {
-			setError("Haerte Hart!",1);
-			printf("grad=%llu\n",lastF);
-		} else {
-			setError("Weiche Wech!",EMPTY);
-			printf("grad=%llu\n",lastF);
-		} ExitOnError("Teste Haertegrad:");
-	}
+
+    if ( isModus("test") ) {
+        printf("\nTest Modus!\n");
+        ulong hashA;
+        sscanf( rawNext('t'), "%llu", &hashA );
+        printf( "hashA: %llu\n", hashA );
+        int hartG;
+        sscanf( nextRaw(), "%i", &hartG );
+        ulong hashB;
+        sscanf( nextRaw(), "%llu", &hashB );
+        printf( "hashB: %llu\n", hashB );
+        ulong lastF;
+        sscanf( nextRaw(), "%llu", &lastF );
+
+        if ( haerteGradFromMerkeHart( hashA, hartG, hashB, &lastF ) ) {
+            setError("Haerte Hart!",1);
+            printf("grad=%llu\n",lastF);
+        } else {
+            setError("Weiche Wech!",EMPTY);
+            printf("grad=%llu\n",lastF);
+        } ExitOnError("Teste Haertegrad:");
+    }
 
     if (isModus("verbose")) {
         showOptions();
@@ -1049,52 +1149,52 @@ int main(int argc,char**argv)
     uint size = NULL;
 
     short Mode = 0;
-	if( !isModus("bin") )
-		setModus("b64");
+    if( !isModus("bin") )
+        setModus("b64");
     if( !isSwitch('t') )
         setSwitch('f');
     if( search('d') )
         Mode = 'd';
     if( search('e') )
         Mode = 'e';
-	
-	if ( isModus("Hash") ) {
-		printf("\nHash Modus!\n");
-		if( search('v') ) {
-			const char* data = getName('v');
-			if( isSwitch('t') ) {
-				printf("hash value of string: '%s' is %llu\n",
-						data, crypt64_calculateHashValue( data, strlen(data) ) );
-			} else if ( isSwitch('f') ) {
-				FILE* f = fopen( data, "rb" );
-				if (f) {
-					fseek(f,0,SEEK_END);
-					const int fsize = ftell(f);
-					MakeArray( byte, loade, fsize )
-					fseek(f,0,SEEK_SET);
-					fread(&loade[0],1,fsize,f);
-					fclose(f);
-					printf( "hash value of file: '%s' is %llu\n",
-							data, crypt64_calculateHashValue( loade, fsize ) );
-					CleanArray( loade )
-				} else
-					setError("File not found",FourCC("file"));
-			}
-		} else 
-		if ( isModus("set") ) {
-			setError("Not implemented yet",FourCC("impl"));
-		} else
-		if ( isModus("lst") ) {
-			setError("Not implemented yet",FourCC("impl"));
-		}
-		exit( CheckForError() );
-	}
-	
+
+    if ( isModus("Hash") ) {
+        printf("\nHash Modus!\n");
+        if( search('v') ) {
+            const char* data = getName('v');
+            if( isSwitch('t') ) {
+                printf("hash value of string: '%s' is %llu\n",
+                        data, crypt64_calculateHashValue( data, strlen(data) ) );
+            } else if ( isSwitch('f') ) {
+                FILE* f = fopen( data, "rb" );
+                if (f) {
+                    fseek(f,0,SEEK_END);
+                    const int fsize = ftell(f);
+                    MakeArray( byte, loade, fsize )
+                    fseek(f,0,SEEK_SET);
+                    fread(&loade[0],1,fsize,f);
+                    fclose(f);
+                    printf( "hash value of file: '%s' is %llu\n",
+                            data, crypt64_calculateHashValue( loade, fsize ) );
+                    CleanArray( loade )
+                } else
+                    setError("File not found",FourCC("file"));
+            }
+        } else
+        if ( isModus("set") ) {
+            setError("Not implemented yet",FourCC("impl"));
+        } else
+        if ( isModus("lst") ) {
+            setError("Not implemented yet",FourCC("impl"));
+        }
+        exit( CheckForError() );
+    }
+
     if( exists('k') ) {
         cmLn input = getName('k');
         if( !(key = crypt64_createKeyFromPass( input )) )
             setErrorText("key initialization");
-		else key->b64cc[3].i8[1] = isModus("bin") ? 0x10 : 0x40;
+        else key->b64cc[3].i8[1] = isModus("bin") ? 0x10 : 0x40;
     }
     switch( Mode ) {
         case 'e': setOption('i',getName('e')); size = CRYPT64_ENCRYPTED_SIZE( strlen(getName('e')) ); break;
@@ -1112,16 +1212,16 @@ int main(int argc,char**argv)
     DEBUGFMT("Mode %i",Mode)
     if( isSwitch('f') ) {
         if( !search('o') ) {
-			if ( (Mode&0x00ff) == 'e' ) {
-				pool_setf( "%s.yps", getName('i') );
-			} else {
-				char* input = (char*)getName('i');
-				if( AsInt(".yps") == AsInt( &input[strlen(input)-4]) )
-					input[strlen(input)-4] = '\0';
-				pool_set( input );
-			} setOption( 'o', pool_get() );
-        } 
-		switch( Mode ) {
+            if ( (Mode&0x00ff) == 'e' ) {
+                pool_setf( "%s.yps", getName('i') );
+            } else {
+                char* input = (char*)getName('i');
+                if( AsInt(".yps") == AsInt( &input[strlen(input)-4]) )
+                    input[strlen(input)-4] = '\0';
+                pool_set( input );
+            } setOption( 'o', pool_get() );
+        }
+        switch( Mode ) {
         case 16485:
             size = crypt64_encryptFile( key, getName('i'), getName('o') );
             break;
@@ -1140,7 +1240,7 @@ int main(int argc,char**argv)
         }
     } else
     if( isSwitch('t') ) {
-		MakeArray( char, data, CRYPT64_ENCRYPTED_SIZE( size ) );
+        MakeArray( char, data, CRYPT64_ENCRYPTED_SIZE( size ) );
         if( Mode == 16485 ) {
             size = crypt64_encrypt( key, (byte*)getName('i'), (uint)strlen( getName('i') ), &data[0] );
         } else if ( Mode == 16484 ) {
@@ -1159,7 +1259,7 @@ int main(int argc,char**argv)
             printf( "Successfully %scrypted %i byte:\n", ((Mode&0x00ff)=='e') ? "en" : "de", size );
         fwrite( &data[0], 1, size+1, output );
         printf( "\n" );
-		CleanArray( data );
+        CleanArray( data );
     } else
     if( isSwitch('s') ) {
         if( !search('o') ) {
@@ -1193,8 +1293,5 @@ int main(int argc,char**argv)
     crypt64_invalidateKey( key );
     exit( CheckForError() );
 }
-
-#undef BIN_FLAg
-#undef B64_FLAG
 
 #endif

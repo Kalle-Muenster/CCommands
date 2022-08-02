@@ -270,8 +270,15 @@ uint base64_initNewB64StreamStruct( const char* mode, b64Stream* stream )
 {
     stream->pos = stream->len = 0;
     stream->flg[0] = 0;
-    stream->flg[1] = (byte)mode[0];
-    stream->flg[2] = (byte)mode[1];
+    const char* modchars = mode;
+    do { switch (*modchars) {
+        case 'r':
+        case 'w': stream->flg[1] = *modchars;
+            break;
+        case 'e':
+        case 'd': stream->flg[2] = *modchars;
+        }
+    } while (*++modchars);
     stream->flg[3] = 0;
     char* waswieso = (char*)&stream->flg[0];
     uint Mode = byteOrder_stringTOfourCC( waswieso );
