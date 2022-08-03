@@ -294,7 +294,7 @@ int crypt64_verifyValidator( K64* key, const byte* dat )
                    : ( ((fmt&0x0000ff00)>>8) == '6') );
         if( valide ) { byte validator[24];
             validator[20] = validator[23] = 0;
-            base64_decodeData( &validator[0], &key->b64cc[0].i8[0] );
+            base64_decodeData( &validator[0], &key->b64cc[0].i8[0], EMPTY );
             ulong check = byteOrder_stringTOlongCC( &validator[0] );
             if( !( valide = ( key->pass.value == check ) ) )
                 setError( "phrase", PHRASE_ERROR );
@@ -371,7 +371,7 @@ uint crypt64_decrypt( K64* key, const char* data, byte* dest )
     uint size = 0;
     if( crypt64_prepareContext( key, BASE64 ) ) {
         if( crypt64_verifyValidator( key, (const byte*)data ) ) {
-            size = base64_decodeData( &dest[0], &data[16] );
+            size = base64_decodeData( &dest[0], &data[16], EMPTY );
         } crypt64_releaseContext( key );
     } return size;
 }
@@ -387,7 +387,7 @@ uint crypt64_binary_encrypt( K64* key, const byte* data, uint size, byte* dest )
         const char* header = crypt64_createValidator( key );
         if ( header ) { out_size = 12;
             CodeTable = B64Table;
-            base64_decodeData( dest, header );
+            base64_decodeData( dest, header, EMPTY );
             dest += 12;
             b64Frame frame = {0};
             while ( pos > 0 ) {
@@ -808,7 +808,7 @@ int delayedVerification( K64F* cryps, byte* data )
         if( cryps->key->b64cc[3].i8[0] == ENCODE ) {
             if( cryps->key->b64cc[3].i8[1] == BINARY ) {
                 CodeTable = base64_b64Table();
-                size = base64_decodeData( data, (const char*)cryps->val );
+                size = base64_decodeData( data, (const char*)cryps->val, EMPTY );
             } else {
                 memcpy( data, cryps->val, size = 16 );
             }
@@ -852,7 +852,7 @@ uint crypt64_nonbuffered_sread( byte* dst, uint size, uint count, K64F* cryps )
             CodeTable = cryps->enc;
             dst[ base64_sread( dst, size, count, &cryps->b64 ) ] = 0;
             CodeTable = cryps->dec;
-            read += base64_decodeData( dst, (const char*)dst );
+            read += base64_decodeData( dst, (const char*)dst, EMPTY );
         } else {
             CodeTable = cryps->key->table;
             read += base64_sread( dst, size, count, &cryps->b64 );
