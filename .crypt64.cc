@@ -495,24 +495,14 @@ uint crypt64_binary_encryptFile( K64* key, const char* srcFile, const char* dstF
         B64S* dst = (B64S*)base64_createFileStream( dstFile, "wd" );
         if ( !dst ) { setError( setTempf("opening file %s", dstFile), OUTPUT_ERROR ); return 0; }
         size += base64_swrite( (const byte*)validator, 1, 16, dst );
-        /*
-        b64Frame data;
-        CodeTable = CrpTable;
-        while( (data = base64_getFrame( src )).u32 ) {
-           CodeTable = B64Table;
-               size += base64_putFrame( dst, data );
-           CodeTable = CrpTable;
-        }
-        */
 
         byte buf[1024];
         ptval siz = 0;
         printf("begin!\n");
         do{ CodeTable = CrpTable;
-            siz = base64_sread( &buf[0], 3, 256, src );
-            printf("read %i frames\n",siz);
+            siz = base64_sread( &buf[0], 4, 256, src );
             CodeTable = B64Table;
-            size += (base64_swrite( &buf[0], 3, siz, dst ) * 3);
+            size += (base64_swrite( &buf[0], 4, siz, dst ) * 3);
         } while( siz == 256 );
         CodeTable = CrpTable;
 
@@ -549,12 +539,6 @@ uint crypt64_decryptFile( K64* key, const char* srcFileName, const char* dstFile
                 size += (base64_swrite( &buf[0], 4, siz, dst ) * 3);
             } while( siz == 256 );
 
-            /*
-            b64Frame fr = { 0 };
-            while( fread( &fr, 1, 4, src ) ) {
-                base64_putFrame( (b64Stream*)dst, fr );
-            } */
-
             base64_destream( (b64Stream*)dst );
         } fclose(src);
 
@@ -577,22 +561,12 @@ uint crypt64_binary_decryptFile( K64* key, const char* srcFileName, const char* 
         if( crypt64_verifyValidator( key, (const byte*)&header[0] ) ) {
             B64S* dst = (B64S*)base64_createFileStream( dstFileName, "wd" );
             if ( !dst ) { setError( setTempf("opening file %s", srcFileName), OUTPUT_ERROR ); return size; }
-            /*
-            b64Frame fr = {1};
-            CodeTable = B64Table;
-            while ( (fr = base64_getFrame( src )).u32 ) {
-                CodeTable = CrpTable;
-                size += base64_putFrame( dst, fr );
-                CodeTable = B64Table;
-            } CodeTable = CrpTable;
-            */
-
             ptval siz = 0;
             byte buf[1024];
             do{ CodeTable = B64Table;
-                siz = base64_sread(&buf[0], 4, 256, src);
+                siz = base64_sread( &buf[0], 4, 256, src );
                 CodeTable = CrpTable;
-                size += (base64_swrite(&buf[0], 4, siz, dst) * 3);
+                size += ( base64_swrite( &buf[0], 4, siz, dst ) * 3 );
             } while( siz == 256 );
         }
 
@@ -913,12 +887,6 @@ uint crypt64_sread( byte* dst, uint size, uint count, K64F* cryps )
                 dst += 3;
             } while( dst < end );
             read += (siz / size);
-    //    MakeArray( byte, buff, (size * count * 4) / 3 )
-    //        CodeTable = cryps->enc;
-    //        buff[ base64_sread( &buff[0], size, count, &cryps->b64 ) ] = 0;
-    //        CodeTable = cryps->dec;
-    //        read += base64_decodeData( dst, (const char*)&buff[0] );
-    //    CleanArray( buff )
         } else {
             CodeTable = cryps->key->table;
             read += base64_sread( dst, size, count, &cryps->b64 );
@@ -943,7 +911,7 @@ uint crypt64_swrite( const byte* src, uint size, uint count, K64F* cryps )
 
         if( cryps->key->b64cc[3].i8[1] == BINARY ) {
             uint siz = (size * count);
-            siz += ((3 - (siz % 3)) % 3); //  BASE64_ENCODED_SIZE( size * count );
+            siz += ((3 - (siz % 3)) % 3);
             const byte* end = src + siz;
             b64Frame data = {0};
             do{ CodeTable = cryps->enc;
@@ -954,12 +922,6 @@ uint crypt64_swrite( const byte* src, uint size, uint count, K64F* cryps )
                 src += 3;
             } while (src < end);
             write += (siz / size);
-        //MakeArray( char, tmpdat, enc_siz )
-  //          CodeTable = cryps->enc;
-  //          tmpdat[ size = base64_encodeData( tmpdat, src, size * count ) ] = 0;
-  //          CodeTable = cryps->dec;
-  //          write += base64_swrite( (const byte*)tmpdat, 1, size, &cryps->b64 );
-        //CleanArray( tmpdat )
         } else {
             CodeTable = cryps->key->table;
             write += base64_swrite( src, size, count, &cryps->b64 );

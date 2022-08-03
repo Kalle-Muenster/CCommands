@@ -51,7 +51,7 @@ typedef enum FeatureType {
     Type_PREPRO = 4,
     Type_LISTER = 8,
     Type_ESCAPE = 0x0010,
-	Type_PREFIX = 0x0020,
+    Type_PREFIX = 0x0020,
     Type_ENVVAR = 0x1000,
     Type_MACROG = 0x2000,
     Type_MACROL = 0x4000,
@@ -67,7 +67,7 @@ typedef struct FeatureGet {
         const char*  string;
         const char** lister;
     } value;
-	const char* name;
+    const char* name;
 } FeatureGet;
 
 #include "./eszentielle/.CommandLinerEndian.h"
@@ -77,9 +77,9 @@ typedef struct FeatureGet {
 #include "./persistente/CommandoFeatures.h"
 
 typedef enum FeatureList {
-	SET_AS_LIST = FOURCC('s','e','t','\0'),
-	ADD_TO_LIST = FOURCC('a','d','d','\0'),
-	REMOVE_FROM = FOURCC('r','e','m','\0')
+    SET_AS_LIST = FOURCC('s','e','t','\0'),
+    ADD_TO_LIST = FOURCC('a','d','d','\0'),
+    REMOVE_FROM = FOURCC('r','e','m','\0')
 } FeatureList;
 
 typedef struct MentorState {
@@ -136,7 +136,7 @@ const char* getReflected(REFLECTOR,const char*);
 
 // checks if given "name" can be found somehow..
 // first checks environmet. if name was not found,
-// it then goes through global reflectors, then 
+// it then goes through global reflectors, then
 // through a commands local reflectors, to see if
 // macro named "name" is defined for the currently
 // executing code...
@@ -176,7 +176,7 @@ void        setPersistEntry(const char*,const char*);
 void        removePersistEntry(const char*);
 // writes the actually selected reflector entries back into the reflector's related feature.h header (to become 'real' macro #defines at least)
 void        commitPersistChange(void);
-// check if there's an actually change operation going on, where changes might have been made which are not written back to their header files yet.  
+// check if there's an actually change operation going on, where changes might have been made which are not written back to their header files yet.
 int         nonCommittedChanges(void);
 
 const char* getPrefixed( REFLECTOR, const char* );

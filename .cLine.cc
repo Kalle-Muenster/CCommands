@@ -269,7 +269,7 @@ ExecutableCmd cLine_compileExpresion( void* state, const char* /*IN*/ cCode, con
     char autoCode[CLINE_OUTER_BUFFER] = {'\0'};
 
     DEBUGLOG( "generating code..." )
-    // code generation is done within 3 separate steps:
+    // code generation is done within 4 separate steps:
     // 1. precproc (#include <bla.h>'s, #define BLUB(s) )
     // 2. typedefs (declare types in resolver scope) <- still TODO
     // 3. vardecls (variables in the resolver scope) 

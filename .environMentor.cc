@@ -39,7 +39,7 @@
 
 MentorState mentor = {
     (short)0, (short)0, 0,
-    {(char)0},{(char)0},DISABLED, //{},DISABLED,
+    {(char)0},{(char)0},DISABLED,
     {NULL},{NULL}
 };
 
@@ -100,10 +100,9 @@ void showPersistente(REFLECTOR whichOne)
     printf("\n\n"); }
 }
 
+
 ////////////////////////////////////////////////////////////////
 // searching through reflectors:...
-
-
 
 int indexOfMacro( const char* name )
 {
@@ -289,12 +288,12 @@ FeatureGet getFeatured( const char* name )
     varval = getVariable( name );
     result.name = name;
     if (varval == NoString) {
-		varval = getPrefixed(LOCAL,name);
-	}
-	if (varval == NULL) {
-		varval = getPrefixed(GLOBAL,name);
-	} 
-	if (varval == NULL) {
+        varval = getPrefixed(LOCAL,name);
+    }
+    if (varval == NULL) {
+        varval = getPrefixed(GLOBAL,name);
+    }
+    if (varval == NULL) {
         result.type.flags = Type_NOTHIN;
         result.value.string = NoString;
         setErrorText( name );
@@ -397,10 +396,10 @@ FeatureGet getFeatured( const char* name )
             const uint nameLength = strlen( result.name );
             result.value.string = (char*)junk_allocateJunkChunk(
                            result.type.size[1] + nameLength + 2 );
-	
+
             result.name = (const char*)strcpy(
-			 result.value.string, result.name );
-	
+             result.value.string, result.name );
+
             result.value.string += (nameLength+1);
             strcpy( result.value.string, &varval[0] );
         }
@@ -409,7 +408,7 @@ FeatureGet getFeatured( const char* name )
         result.value.string = NoString;
         result.type.flags = Type_NOTHIN;
     }
-	CleanArray( work );
+    CleanArray( work );
     mentor.scope = state;
     return result;
 }
@@ -448,7 +447,7 @@ int addFeaturedList( const char* feature, char* value )
     int len = strlen(value);
     const char* macroval = getPrefixed( ANY, feature );
     MakeArray( char, convertedValue, strlen(macroval) + len + 4 );
-	char* setter = &convertedValue[0];
+    char* setter = &convertedValue[0];
     *setter++ ='\"';
     if( macroval ) {
         ++macroval;
@@ -461,7 +460,7 @@ int addFeaturedList( const char* feature, char* value )
     *setter++ ='\"';
     *setter = '\0';
     setPrefixed( feature, &convertedValue[0] );
-	CleanArray( convertedValue );
+    CleanArray( convertedValue );
     return true;
 }
 
@@ -646,8 +645,8 @@ void writeMacroInternal(const char* name, const char* value,
                         int index, const char** NAMES,
                         const char* commandName )
 {
-DEBUGFMT("beginn writing macro: %s",name);
-DEBUGFMT("at index %i!",index);
+DEBUGFMT("beginn writing macro: %s",name)
+DEBUGFMT("at index %i!",index)
 
     FILE* f = fopen(fileName,"w+");
    #if defined(ADD_NORMALISATOR)
@@ -927,7 +926,7 @@ void enableFeaturesForCommand(const char* commandName)
         fprintf(f,"    \"ENVIRONMENTIONED\\0\\\"this is %s teststring\\\"\",\n",commandName);
         fprintf(f,"};\n");
     } fflush(f); fclose(f);
-	CleanArray( featureIncluder );
+    CleanArray( featureIncluder );
 }
 
 void enableFeaturesForCommander(void)
@@ -1137,7 +1136,7 @@ printf("... exporting features...\n");
 system( CONSOLA " \"echo.\"" );
 }
 
-/*
-#define NormalizeNamespace (1)
-#include COMMAND_DEPENDENT_HEADER
-*/
+
+
+// #define NormalizeNamespace (1)
+// #include COMMAND_DEPENDENT_HEADER

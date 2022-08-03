@@ -41,11 +41,13 @@ extern "C" {
 #else
 #define BASE64_COMPRESSIONRATE  0.75    // (4.0/3.0)
 #endif
+
 #define BASE64_PADDING_SIZE(r,sz) ((r - (sz % r)) % r)
 #define BASE64_ENCODINGRATE(size) (uint)( 0.5 + ( (double)size / BASE64_COMPRESSIONRATE ) )
 #define BASE64_ENCODED_SIZE(size) BASE64_ENCODINGRATE(size) + BASE64_PADDING_SIZE(4, BASE64_ENCODINGRATE(size) )
 #define BASE64_DECODINGRATE(size) (uint)( 0.5 + ( (double)size * BASE64_COMPRESSIONRATE ) )
 #define BASE64_DECODED_SIZE(size) BASE64_DECODINGRATE(size) + BASE64_PADDING_SIZE(3, BASE64_DECODINGRATE(size) )
+
 #ifndef BASE64_VERFAHREN
 #define BASE64_VERFAHREN 1
 #endif
@@ -94,16 +96,16 @@ BASE64_API const char* base64_encode(const byte* data, uint size);
 BASE64_API const byte* base64_decode(const char* encd, uint* size);
 
 // encode content of file dst to file src
-BASE64_API int         base64_encodeFile(const char* dst, const char* src);
+BASE64_API int         base64_encodeFile(const char* dst, const char* src, byte* buffer, uint cbSize);
 
 // decode base64 content from file src to file dst
-BASE64_API int         base64_decodeFile(const char* dst, const char* src);
+BASE64_API int         base64_decodeFile(const char* dst, const char* src, byte* buffer, uint cbSize);
 
 // encode content of file dst to file src
-BASE64_API int         base64_encodeFileToFile(FILE* dst, FILE* src);
+BASE64_API int         base64_encodeFileToFile(FILE* dst, FILE* src, byte* buffer, uint cbSize);
 
 // decode base64 content from file src to file dst
-BASE64_API int         base64_decodeFileToFile(FILE* dst, FILE* src);
+BASE64_API int         base64_decodeFileToFile(FILE* dst, FILE* src, byte* buffer, uint cbSize);
 
 BASE64_API int         base64_encodeFromFile(const char* fileName, int* out_len);
 BASE64_API int         base64_decodeFromFile(const char* fileName, int* out_len);

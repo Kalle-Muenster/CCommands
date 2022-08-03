@@ -94,7 +94,7 @@ static b64Frame read_nxt_dec(void* stream)
 static b64Frame read_nxt_enc(void* stream)
 {
     b64Stream* strm = (b64Stream*)stream;
-    if ( base64_canStream(strm) ) // <- TODO:  try to let done without doing this check
+    if ( base64_canStream( strm ) ) // <- TODO:  try to let done without doing this check
         return base64_encodeFrame( *strm->get(strm) );
     else return nullFrame;
 }
@@ -255,7 +255,15 @@ static uint dec_into_b64s( void* bufferSrc, uint size, uint count, b64Stream* st
     int wantWrite = (int)(size * count);
     while( wantWrite >= stream->flg[0] && wantWrite % stream->flg[0] ) {
         wantWrite -= size;
-    } if ( wantWrite < stream->flg[0] ) return 0;
+    } if (wantWrite == 0) {
+        return 0;
+    } else if (wantWrite < stream->flg[0]) {
+        b64Frame last = { 1027423549u };
+        byte* buf = (byte*)bufferSrc;
+        for (int i = 0; i < wantWrite; ++i) {
+            last.u8[i] = buf[i];
+        } stream->set( stream, base64_decodeFrame( last ) );
+    return 1; }
     int frames = wantWrite / stream->flg[0];
     b64Frame* Src = (b64Frame*)bufferSrc;
     while (frames--)
@@ -468,12 +476,12 @@ b64File* base64_createFileStream( const char* fileName, const char* mode )
 
 // from 'stream', it reads 'count' blocks of data, each 'size' byte large
 // return: count on read blocks, now contained in passed buffer 'dst'.
-uint base64_sread( byte* dst, uint size, uint count, b64Stream* stream )
+uint base64_sread( byte* dst, uint elm_siz, uint elm_cnt, b64Stream* stream )
 {
     if( stream->flg[1] == INPUT ) {
         switch ( stream->flg[0] ) {
-        case ENCODE: return enc_from_b64s(dst, size, count, stream);
-        case DECODE: return dec_from_b64s(dst, size, count, stream);
+        case ENCODE: return enc_from_b64s( dst, elm_siz, elm_cnt, stream );
+        case DECODE: return dec_from_b64s( dst, elm_siz, elm_cnt, stream );
         default: setErrorText("invalid codec mode"); return 0;
         }
     } else { setErrorText("wrong stream direction"); return 0; }
@@ -485,8 +493,8 @@ uint base64_swrite( const byte* src, uint elm_siz, uint elm_cnt, b64Stream* stre
 {
     if( stream->flg[1] == OUTPUT ) {
         switch ( stream->flg[0] ) {
-        case ENCODE: return enc_into_b64s((void*)src, elm_siz, elm_cnt, stream);
-        case DECODE: return dec_into_b64s((void*)src, elm_siz, elm_cnt, stream);
+        case ENCODE: return enc_into_b64s((void*)src, elm_siz, elm_cnt, stream );
+        case DECODE: return dec_into_b64s((void*)src, elm_siz, elm_cnt, stream );
         default: setErrorText("invalid codec mode"); return 0;
         }
     } else { setErrorText("wrong stream direction"); return 0; }
