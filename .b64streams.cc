@@ -63,23 +63,28 @@ static b64Frame* data_get_dec(b64Stream* strm)
     return &strm->buf[strm->pos++];
 }
 
-static b64Frame* file_get_enc(b64Stream* strm)
+static b64Frame* file_get_enc( b64Stream* strm )
 {
     b64Frame* fr = (b64Frame*)&((b64File*)strm)->buf;
     fr->u32 = 0;
-    fread( fr, 1, 3, (FILE*)((b64File*)strm)->dat );
+    fr->u8[3] = 3 - fread( fr, 1, 3, (FILE*)((b64File*)strm)->dat );
     return fr;
 }
+
 static b64Frame* file_get_dec(b64Stream* strm)
 {
     b64Frame* fr = (b64Frame*)&((b64File*)strm)->buf;
-    fr->u32 = 0;
+    fr->u32 = 1027423549u;
+#if BASE64_WITH_LINEBREAKS == 1
     int i=0;
-    byte* fb = (byte*)fr;
+    byte* fb = &fr->u8[0];
     while( i++ < 4 ) {
-        fread( fb, 1, 1, (FILE*)((b64File*)strm)->dat );
-        if( *fb != '\n' ) ++fb; else --i;
-    } return fr;
+        fread(fb, 1, 1, (FILE*)((b64File*)strm)->dat );
+        if ( *fb != '\n' ) { ++fb; } else { --i; } }
+#else
+    fread( fr, 1, 4, (FILE*)((b64File*)strm)->dat );
+#endif
+    return fr;
 }
 
 // read 4 chars b64 data to return 3 decoded bytes + 0 on success or +!=0 on bad b64 data input
@@ -93,11 +98,11 @@ static b64Frame read_nxt_dec(void* stream)
 //read 3 bytes as 4 chars b64 data from 'stream' or returns NULL on stream empty
 static b64Frame read_nxt_enc(void* stream)
 {
-    b64Stream* strm = (b64Stream*)stream;
-    if ( base64_canStream( strm ) ) // <- TODO:  try to let done without doing this check
-        return base64_encodeFrame( *strm->get(strm) );
-    else return nullFrame;
+    b64Frame frme = *((b64Stream*)stream)->get((b64Stream*)stream);
+    if ( frme.u8[3] ) return base64_encEndFrame( frme );
+    else return base64_encodeFrame( frme );
 }
+
 static b64Frame read_end_enc(void* stream)
 {
     b64Stream* strm = (b64Stream*)stream;
@@ -163,16 +168,17 @@ int b64_data_fill_frame(b64Stream* stream, b64Frame frame)
 static uint enc_from_b64s( void* bufferDst, uint blocksize, uint blockcount, b64Stream* stream )
 {
     if (stream->flg[0] == ENCODE) {
+        uint endchunk = false;
         uint wantBytes = blocksize * blockcount;
-        uint available = base64_streamBytesRemaining(stream);
-        wantBytes = wantBytes < available
-                  ? wantBytes : available;
-        if (blocksize != 4) {
-            wantBytes -= (wantBytes % 4);
-        } while (wantBytes % blocksize) {
-            wantBytes -= 4;
+        uint available = base64_streamBytesRemaining( stream );
+        if ( available < wantBytes ) {
+            endchunk = available % 4;
+            if (endchunk != 0) endchunk = 4 - endchunk;
+            wantBytes = available + endchunk;
+        } else if (blocksize != 4) {
+            while( (wantBytes % 4) && (wantBytes > blocksize) )
+                    wantBytes -= blocksize;
         } uint* end = (uint*)((byte*)bufferDst + wantBytes);
-        uint dbgcnt = (uint)((byte*)end - (byte*)bufferDst);
         for( uint* dst = (uint*)bufferDst; dst != end; ++dst ) {
             *dst = stream->nxt( stream ).u32;
         } blockcount = wantBytes / blocksize;

@@ -14,7 +14,7 @@
 
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
-#define CRYPS64_API __declspec(dllexport) 
+#define CRYPS64_API __declspec(dllexport)
 #else
 #define CRYPS64_API
 #endif
@@ -37,7 +37,7 @@ extern "C" {
 #define CRYPT64_ENCRYPTED_SIZE(size) BASE64_ENCODED_SIZE( size ) + 16u
 #define CRYPT64_DECRYPTED_SIZE(size) BASE64_DECODED_SIZE( (size-16u) )
 
-	typedef b64Frame k64Chunk;
+    typedef b64Frame k64Chunk;
 
     typedef struct CRYPS64_API K64 {
         const char* table;
@@ -52,26 +52,26 @@ extern "C" {
         b64Stream   b64;
         K64*        key;
         const byte* val;
-		const char* enc;
-		const char* dec;
+        const char* enc;
+        const char* dec;
     } k64Stream, K64F;
 
-	typedef enum CRYPS64_API CRYPS64 {
-		CRYPST = '?',
-		BASE64 = 0x40u,
-		BINARY = 0x10u,
-	    NOT_INITIALIZED = FOURCC('i','n','i','\0'),
-		CONTXT_ERROR = FOURCC('c','t','x','\0'),
-		FORMAT_ERROR = FOURCC('f','m','t','\0'),
-		TABLES_ERROR = FOURCC('t','b','l','\0'),
-		STREAM_ERROR = FOURCC('d','i','r','\0'),
-		OUTPUT_ERROR = FOURCC('d','s','t','\0'),
-		INPUTS_ERROR = FOURCC('s','r','c','\0'),
-		PHRASE_ERROR = FOURCC('k','e','y','\0')
-	} CRYPS64;
+    typedef enum CRYPS64_API CRYPS64 {
+        CRYPST = '?',
+        BASE64 = 0x40u,
+        BINARY = 0x10u,
+        NOT_INITIALIZED = FOURCC('i','n','i','\0'),
+        CONTXT_ERROR = FOURCC('c','t','x','\0'),
+        FORMAT_ERROR = FOURCC('f','m','t','\0'),
+        TABLES_ERROR = FOURCC('t','b','l','\0'),
+        STREAM_ERROR = FOURCC('d','i','r','\0'),
+        OUTPUT_ERROR = FOURCC('d','s','t','\0'),
+        INPUTS_ERROR = FOURCC('s','r','c','\0'),
+        PHRASE_ERROR = FOURCC('k','e','y','\0')
+    } CRYPS64;
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
-#include <crypt64.h> 
+#include <crypt64.h>
 #else
 
    CRYPS64_API void     crypt64_Initialize( bool init );
@@ -98,8 +98,8 @@ extern "C" {
    CRYPS64_API int  crypt64_prepareContext( K64* key, byte mod );
    CRYPS64_API int  crypt64_releaseContext( K64* key );
 
-   CRYPS64_API uint crypt64_encrypt(K64* key64, const byte* data, uint  size, char* dest);
-   CRYPS64_API uint crypt64_decrypt(K64* key64, const char* data, byte* dest);
+   CRYPS64_API uint crypt64_encrypt(K64* key64, const byte* data, uint size, char* dest);
+   CRYPS64_API uint crypt64_decrypt(K64* key64, const char* data, uint size, byte* dest);
    CRYPS64_API uint crypt64_encryptFile(K64* key64, const char* src, const char* dst);
    CRYPS64_API uint crypt64_decryptFile(K64* key64, const char* src, const char* dst);
    CRYPS64_API uint crypt64_decryptStdIn(K64*, FILE* destination);

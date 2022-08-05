@@ -294,7 +294,7 @@ int crypt64_verifyValidator( K64* key, const byte* dat )
                    : ( ((fmt&0x0000ff00)>>8) == '6') );
         if( valide ) { byte validator[24];
             validator[20] = validator[23] = 0;
-            base64_decodeData( &validator[0], &key->b64cc[0].i8[0], EMPTY );
+            base64_decodeData( &validator[0], &key->b64cc[0].i8[0], 16 );
             ulong check = byteOrder_stringTOlongCC( &validator[0] );
             if( !( valide = ( key->pass.value == check ) ) )
                 setError( "phrase", PHRASE_ERROR );
@@ -366,14 +366,14 @@ uint crypt64_encrypt( K64* key, const byte* data, uint size, char* dest )
     } return outlen;
 }
 
-uint crypt64_decrypt( K64* key, const char* data, byte* dest )
+uint crypt64_decrypt( K64* key, const char* data, uint size, byte* dest )
 {
-    uint size = 0;
+    uint outlen = 0;
     if( crypt64_prepareContext( key, BASE64 ) ) {
         if( crypt64_verifyValidator( key, (const byte*)data ) ) {
-            size = base64_decodeData( &dest[0], &data[16], EMPTY );
+            outlen = base64_decodeData( &dest[0], &data[16], size-16 );
         } crypt64_releaseContext( key );
-    } return size;
+    } return outlen;
 }
 
 uint crypt64_binary_encrypt( K64* key, const byte* data, uint size, byte* dest )
@@ -469,9 +469,6 @@ uint crypt64_encryptFile( K64* key, const char* srcFile, const char* dstFile )
             size += ( fwrite( &buf[0], 4, siz, dst ) * 4 );
         } while( siz == 256 );
 
-        //while( ( data = base64_getFrame( src ) ).u32 )
-        //    size += fwrite( &data.u8[0], 1, 4, dst );
-
         data.i8[0] = '=';
         size += fwrite( &data.i8[0], 1, 1, dst );
         fflush(dst); fclose(dst);
@@ -498,7 +495,6 @@ uint crypt64_binary_encryptFile( K64* key, const char* srcFile, const char* dstF
 
         byte buf[1024];
         ptval siz = 0;
-        printf("begin!\n");
         do{ CodeTable = CrpTable;
             siz = base64_sread( &buf[0], 4, 256, src );
             CodeTable = B64Table;
@@ -716,7 +712,6 @@ K64F* crypt64_createFileStream( K64* key, const char* path, const char* mode )
 
     if ( base64_initB64FileStreamStruct( (B64F*)&stream->b64, path, m ) ) {
         stream->key = key;
-        //stream->b64.flg[1] = CRYPST;
     }
 
     stream->val = NULL;
@@ -732,9 +727,10 @@ K64F* crypt64_createFileStream( K64* key, const char* path, const char* mode )
             switch ( set ) {
             case BINARY: {
                 stream->enc = base64_b64Table();
-                stream->dec = base64_setTable( stream->key->table );
+                stream->dec = base64_getTable();
                 CodeTable = stream->enc;
-                base64_sread( (byte*)&header[0], 1, 16, &stream->b64 );
+                base64_sread( (byte*)&header[0], 4, 4, &stream->b64 );
+                CodeTable = stream->dec;
             } break;
             case BASE64: {
                 fread( &header[0], 1, 16, (FILE*)stream->b64.dat );
@@ -883,9 +879,10 @@ uint crypt64_sread( byte* dst, uint size, uint count, K64F* cryps )
             do{ CodeTable = cryps->enc;
                 data = base64_getFrame( &cryps->b64 );
                 CodeTable = cryps->dec;
-                *(b64Frame*)dst = base64_decodeFrame( data );
+                data = base64_decodeFrame( data );
+                asFrame(dst) = data;
                 dst += 3;
-            } while( dst < end );
+            } while( dst < end && data.u8[3] == 0 );
             read += (siz / size);
         } else {
             CodeTable = cryps->key->table;
@@ -1206,7 +1203,7 @@ int main(int argc,char**argv)
         if( Mode == 16485 ) {
             size = crypt64_encrypt( key, (byte*)getName('i'), (uint)strlen( getName('i') ), &data[0] );
         } else if ( Mode == 16484 ) {
-            size = crypt64_decrypt( key, getName('i'), (byte*)&data[0] );
+            size = crypt64_decrypt( key, getName('i'), (uint)strlen( getName('i') ), (byte*)&data[0] );
         } else if ( Mode == 4197 ) {
             size = crypt64_binary_encrypt( key, (byte*)getName('i'), (uint)strlen( getName('i') ), (byte*)&data[0] );
         } else if ( Mode == 4196 ) {

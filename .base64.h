@@ -6,7 +6,7 @@
 
 
 
-#if (!defined(NOT_USE_ENVIRONMENTOR)) && defined(__TINYC__) 
+#if (!defined(NOT_USE_ENVIRONMENTOR)) && defined(__TINYC__)
 #include ".environMentor.h"
 #if WINDOWS
 #include <io.h>
@@ -33,7 +33,7 @@ extern "C" {
 
 #if     BASE64_WITH_LINEBREAKS > 0
 #define BASE64_COMPRESSIONRATE  0.7384615384615385 // 1.354166666666667
-    //  1.35416_ is 4/3 * 65/64 
+    //  1.35416_ is 4/3 * 65/64
     //  *this is related to the fact that output after each 64th byte
     //  gets an additional linebreak byte inserted which even if that
     //  byte doesn't transports any information, indeed increases the
@@ -64,7 +64,7 @@ extern "C" {
 
 #ifndef BASE64_ENABLE_STREAMING_API
 #define BASE64_ENABLE_STREAMING_API (1)
-#endif 
+#endif
 
 
 #define uInt(fromChars)    (*(unsigned*)fromChars)
@@ -87,10 +87,11 @@ typedef b64Frame BASE64_API const B64Nuller;
 #else
 
 BASE64_API void        base64_Initialize(void);
-BASE64_API b64Frame    base64_encodeFrame( b64Frame threeChars );
+BASE64_API b64Frame    base64_encodeFrame( b64Frame threeByte );
 BASE64_API b64Frame    base64_decodeFrame( b64Frame fourChars ); //returns 3 bytes bin data + 0 or +!=0 on decoding errors (4th byte then points actual bad input byte)
-BASE64_API int         base64_encodeData(char* dst, const byte* src, unsigned cbSrc); //encode binary data of cbSrc length
-BASE64_API int         base64_decodeData(byte* dst, const char* src); //decode base64 data (at best terminated by equal sign)
+BASE64_API b64Frame    base64_encEndFrame( b64Frame threeByteWithFourthLengthByte );
+BASE64_API int         base64_encodeData(char* dst, const byte* src, unsigned cbSrc ); //encode binary data of cbSrc length
+BASE64_API int         base64_decodeData(byte* dst, const char* src, unsigned cbSrc ); //decode base64 data (at best terminated by equal sign)
 
 BASE64_API const char* base64_encode(const byte* data, uint size);
 BASE64_API const byte* base64_decode(const char* encd, uint* size);
@@ -111,10 +112,10 @@ BASE64_API int         base64_encodeFromFile(const char* fileName, int* out_len)
 BASE64_API int         base64_decodeFromFile(const char* fileName, int* out_len);
 
 
-// get the regular, base64 standard coding table 
+// get the regular, base64 standard coding table
 BASE64_API const char* base64_b64Table(void);
 
-// get actually in use coding table loaded 
+// get actually in use coding table loaded
 BASE64_API const char* base64_getTable(void);
 
 // set a base64 table to be used for following operation (table won't be stored persistent)

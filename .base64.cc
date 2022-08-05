@@ -400,6 +400,20 @@ b64Frame base64_encodeFrame( b64Frame frame )
     } return frame;
 }
 
+// encodes last frame (enodes first 3 byte of 'frame' to 4 chars base64-data)
+// and exchanges trailing 'A's in the output against '=' termination signs.
+b64Frame base64_encEndFrame( b64Frame frm )
+{
+    int mod = frm.u8[3];
+    frm = base64_encodeFrame( frm );
+    switch (mod) {
+    case 3: frm.u32 = 1027423549u; return frm;
+    case 2: frm.i8[1] = frm.i8[1] == 'A' ? '=' : frm.i8[1];
+            frm.i8[2] = frm.i8[2] == 'A' ? '=' : frm.i8[2];
+    case 1: frm.i8[3] = frm.i8[3] == 'A' ? '=' : frm.i8[3];
+    } return frm;
+}
+
 // decode one frame (4 chars base64-data to 3 byte binary data)
 b64Frame base64_decodeFrame( b64Frame fourChars )
 {
@@ -441,7 +455,7 @@ int base64_encodeData( char* dst, const byte* src, unsigned cbSrc )
     // make a 3byte padded copy of the maybe less then 3 byte sized last
     // frame of input data. used as input for encoding the endframe after
     // encoding input data without it's last, truncated frame. (which in
-    // case passed buffer not ends on a 3byte boundary would cause error)   
+    // case passed buffer not ends on a 3byte boundary would cause error)
     b64Frame end = {0};
     while ( iS < cbSrc ) {
         end.u8[lB++] = src[iS++];
@@ -475,7 +489,7 @@ int base64_decodeData( byte* dst, const char* src, uint cbSrc )
     cbSrc = cbSrc ? cbSrc - 4 : EMPTY;
 
 #if BASE64_WITH_LINEBREAKS == 1
-    do{ if ( src[iS+=4] == '\n' ) ++iS; 
+    do{ if ( src[iS+=4] == '\n' ) ++iS;
     } while ( (iS < cbSrc)
          && !( asFrame( &dst[iD+=3] ) = base64_decodeFrame( asFrame(&src[iS]) ) ).i8[3] );
 #else
@@ -590,7 +604,7 @@ int base64_encodeFileToFile( FILE* dst, FILE* src, byte* buf, uint siz )
         do{ siz = srcSiz < size ? srcSiz : size;
             siz = fread( srcBuf, 1, siz, src );
             size -= siz;
-            int dec = base64_encodeData( dstBuf, srcBuf, siz );
+            int dec = base64_encodeData( (char*)dstBuf, srcBuf, siz );
 #if BASE64_WITH_LINEBREAKS == 1
             if( cpos % 65 == 64 ) cpos += fwrite( "\n", 1, 1, dst );
 #endif
@@ -654,7 +668,7 @@ int base64_decodeFileToFile( FILE* dst, FILE* src, byte* buf, uint siz )
         byte* bufDst = buf;
         byte* bufSrc = buf + srcLos;
         do{ siz = sizSrc < size ? sizSrc : size;
-            int enc = 0; 
+            int enc = 0;
 #if BASE64_WITH_LINEBREAKS == 1
             int lb = 0;
             do{ if (fread(bufSrc, 1, 1, src) == 0) {
@@ -672,7 +686,7 @@ int base64_decodeFileToFile( FILE* dst, FILE* src, byte* buf, uint siz )
             size -= siz;
 #endif
             bufSrc[siz] = 0;
-            enc = base64_decodeData( bufDst, bufSrc, siz );
+            enc = base64_decodeData( bufDst, (const char*)bufSrc, siz );
             cpos += fwrite( bufDst, 1, enc, dst );
         } while( siz == sizSrc );
     } else {
