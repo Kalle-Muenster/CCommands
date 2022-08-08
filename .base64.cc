@@ -420,7 +420,7 @@ b64Frame base64_encodeFrame( b64Frame frame )
 }
 
 // encodes last frame (enodes first 3 byte of 'frame' to 4 chars base64-data)
-// and exchanges trailing 'A's in the output against '=' termination signs. 
+// and exchanges trailing 'A's in the output against '=' termination signs.
 b64Frame base64_encEndFrame( b64Frame frm )
 {
     int mod = frm.u8[3];
@@ -474,7 +474,7 @@ int base64_encodeData( char* dst, const byte* src, unsigned cbSrc )
     // make a 3byte padded copy of the maybe less then 3 byte sized last
     // frame of input data. used as input for encoding the endframe after
     // encoding input data without it's last, truncated frame. (which in
-    // case passed buffer not ends on a 3byte boundary would cause error)   
+    // case passed buffer not ends on a 3byte boundary would cause error)
     b64Frame end = {0};
     while ( iS < cbSrc ) {
         end.u8[lB++] = src[iS++];
@@ -627,7 +627,7 @@ int base64_encodeFileToFile( FILE* dst, FILE* src, byte* buf, uint siz )
         do{ siz = srcSiz < size ? srcSiz : size;
             siz = fread( srcBuf, 1, siz, src );
             size -= siz;
-			fflush( dst );
+		//	fflush( dst );
             int enc = base64_encodeData( dstBuf, srcBuf, siz );
 #if BASE64_WITH_LINEBREAKS == 1
             if( cpos % 65 == 64 ) cpos += fwrite( "\n", 1, 1, dst );
@@ -715,7 +715,7 @@ int base64_decodeFileToFile( FILE* dst, FILE* src, byte* buf, uint siz )
 		    bufSrc[ siz ] = 0;
             size -= siz;
 #endif
-            fflush( dst );
+        //    fflush( dst );
             dec = base64_decodeData( bufDst, bufSrc, siz );
             cpos += fwrite( bufDst, 1, dec, dst );
         } while( siz == sizSrc );

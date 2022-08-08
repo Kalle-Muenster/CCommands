@@ -177,7 +177,7 @@ static uint enc_from_b64s( void* bufferDst, uint blocksize, uint blockcount, b64
             wantBytes = available + endchunk;
         } else if (blocksize != 4) {
             while( (wantBytes % 4) && (wantBytes > blocksize) )
-                    wantBytes -= blocksize; 
+                    wantBytes -= blocksize;
         } uint* end = (uint*)((byte*)bufferDst + wantBytes);
         for( uint* dst = (uint*)bufferDst; dst != end; ++dst ) {
             *dst = stream->nxt( stream ).u32;

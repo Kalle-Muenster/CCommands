@@ -6,7 +6,7 @@
 
 
 
-#if (!defined(NOT_USE_ENVIRONMENTOR)) && defined(__TINYC__) 
+#if (!defined(NOT_USE_ENVIRONMENTOR)) && defined(__TINYC__)
 #include ".environMentor.h"
 #if WINDOWS
 #include <io.h>
@@ -68,7 +68,7 @@ extern "C" {
 
 #ifndef BASE64_ENABLE_STREAMING_API
 #define BASE64_ENABLE_STREAMING_API (1)
-#endif 
+#endif
 
 
 #define uInt(fromChars)    (*(unsigned*)fromChars)
@@ -116,10 +116,10 @@ BASE64_API int         base64_encodeFromFile(const char* fileName, int* out_len)
 BASE64_API int         base64_decodeFromFile(const char* fileName, int* out_len);
 
 
-// get the regular, base64 standard coding table 
+// get the regular, base64 standard coding table
 BASE64_API const char* base64_b64Table(void);
 
-// get actually in use coding table loaded 
+// get actually in use coding table loaded
 BASE64_API const char* base64_getTable(void);
 
 // set a base64 table to be used for following operation (table won't be stored persistent)
