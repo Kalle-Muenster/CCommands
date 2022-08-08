@@ -153,8 +153,8 @@ COMMANDLINER_API cmOp    isAnyModus(cmLn wildcard);
 COMMANDLINER_API cmBl    isAnyModusAtAll(void);
 COMMANDLINER_API cmBl    isAnyOtherModusThen(cmLn);
 COMMANDLINER_API cmLn    getModus(cmOp ofOption);
-COMMANDLINER_API cmLn    getModusNumber(uint number);
-COMMANDLINER_API int     modusNumber( cmLn mode );
+COMMANDLINER_API cmLn    getModusByNumber( uint number );
+COMMANDLINER_API int     getNumberOfModus( cmLn mode );
 COMMANDLINER_API int     idxOfModusNumber( int number );
 COMMANDLINER_API cmBl    hasModus(cmLn modus,cmLn name);
 

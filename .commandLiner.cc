@@ -768,17 +768,17 @@ int idxOfModusNumber( int number )
     } return c.running->numgum;
 }
 
-// return the modus at modus-(one-based)-index 'number'
-// (the n'th modus given - not index of tokken at all!)
-cmLn getModusNumber( uint number )
+// returns name of that modus positioned at (one-based)
+// modus-index 'number' (name of the n'th modus given)
+cmLn getModusByNumber( uint number )
 {
     if (!number) return NoString;
     return c.running->names[ idxOfModusNumber(number) ];
 }
 
-// get the n'th modus given (counterpart to getModusNumber()
-// but the otherway round
-int modusNumber( cmLn mode ) {
+// get the number of a named modus given (counterpart to
+// getModusByNumber() which by number gets a modex 'name'
+int getNumberOfModus( cmLn mode ) {
     int modex=0;
     for(int i=0;i<c.running->numgum;++i) {
         int ismode = (c.running->options[i]==c.running->names[i][0]);
@@ -798,7 +798,7 @@ cmBl hasModus( cmLn modus, cmLn parameter )
     DEBUGFMT("searching through modus: %s",modus)
     if ( group ) { int member = indexOfFirst( parameter );
         if ( member > indexOf( group ) ) {
-            int modex = modusNumber( modus );
+            int modex = getNumberOfModus( modus );
             DEBUGFMT("modex is %i",modex)
             return isAnyModusAtAll() >  modex
                  ? member < idxOfModusNumber( modex + 1 )
@@ -1202,34 +1202,24 @@ char* toPrintList( char* list )
     return list;
 }
 
+/*
 #ifdef __TINYC__
 #define SCRIPT_DEBUG DEBUG
 #else
 #define SCRIPT_DEBUG 0
 #endif
+*/
 void* getDingens( const char* named )
 {
-    #if SCRIPT_DEBUG
-    printf( "%s(): looking for a '%s' dingens\n", __FUNCTION__, named);
-    #endif
     ulong get = Dingens( named );
     if ( c.running->dingens ) {
         Ding* dings = c.running->dingens;
         do{
-            #if SCRIPT_DEBUG
-            printf( "%s(): trying das da: %s\n", __FUNCTION__, Maskens( dings->dasda ) );
-            #endif
             if( dings->dasda == get ) {
-                #if SCRIPT_DEBUG
-                printf( "%s(): found it :)\n", __FUNCTION__ );
-                #endif
                 return dings->bumms;
             }
         } while( dings = dings->dings );
     }
-    #if SCRIPT_DEBUG
-    printf( "%s(): NOT found the %s :(\n", __FUNCTION__, Maskens(get) );
-    #endif
     return NULL;
 }
 
@@ -1285,7 +1275,7 @@ void addDingens( const char* named, void* dingens, void(*bumms)(void) )
     dings->which = bumms;
 }
 
-#undef SCRIPT_DEBUG
+//#undef SCRIPT_DEBUG
 
 #else
 #undef NOT_COMPILE_FILE

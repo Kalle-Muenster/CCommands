@@ -98,8 +98,8 @@ extern "C" {
    CRYPS64_API int  crypt64_prepareContext( K64* key, byte mod );
    CRYPS64_API int  crypt64_releaseContext( K64* key );
 
-   CRYPS64_API uint crypt64_encrypt(K64* key64, const byte* data, uint  size, char* dest);
-   CRYPS64_API uint crypt64_decrypt(K64* key64, const char* data, byte* dest);
+   CRYPS64_API uint crypt64_encrypt(K64* key64, const byte* data, uint size, char* dest);
+   CRYPS64_API uint crypt64_decrypt(K64* key64, const char* data, uint size, byte* dest);
    CRYPS64_API uint crypt64_encryptFile(K64* key64, const char* src, const char* dst);
    CRYPS64_API uint crypt64_decryptFile(K64* key64, const char* src, const char* dst);
    CRYPS64_API uint crypt64_decryptStdIn(K64*, FILE* destination);

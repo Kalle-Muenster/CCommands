@@ -27,12 +27,16 @@ extern "C" {
 #endif
 #endif
 
+#ifndef BASE64_DEFAULTTABLE
+#define BASE64_DEFAULTTABLE base64defaultTable
+#endif
+
 #ifndef BASE64_WITH_LINEBREAKS
 #define BASE64_WITH_LINEBREAKS (1)
 #endif
 
 #if     BASE64_WITH_LINEBREAKS > 0
-#define BASE64_COMPRESSIONRATE  0.7384615384615385 // 1.354166666666667
+#define BASE64_COMPRESSIONRATE  0.7384615384615385
     //  1.35416_ is 4/3 * 65/64 
     //  *this is related to the fact that output after each 64th byte
     //  gets an additional linebreak byte inserted which even if that
@@ -87,10 +91,11 @@ typedef b64Frame BASE64_API const B64Nuller;
 #else
 
 BASE64_API void        base64_Initialize(void);
-BASE64_API b64Frame    base64_encodeFrame( b64Frame threeChars );
+BASE64_API b64Frame    base64_encodeFrame( b64Frame threeByte );
 BASE64_API b64Frame    base64_decodeFrame( b64Frame fourChars ); //returns 3 bytes bin data + 0 or +!=0 on decoding errors (4th byte then points actual bad input byte)
-BASE64_API int         base64_encodeData(char* dst, const byte* src, unsigned cbSrc); //encode binary data of cbSrc length
-BASE64_API int         base64_decodeData(byte* dst, const char* src); //decode base64 data (at best terminated by equal sign)
+BASE64_API b64Frame    base64_encEndFrame( b64Frame threeByteWithFourthLengthByte );
+BASE64_API int         base64_encodeData(char* dst, const byte* src, unsigned cbSrc ); //encode binary data of cbSrc length
+BASE64_API int         base64_decodeData(byte* dst, const char* src, unsigned cbSrc ); //decode base64 data (at best terminated by equal sign)
 
 BASE64_API const char* base64_encode(const byte* data, uint size);
 BASE64_API const byte* base64_decode(const char* encd, uint* size);
@@ -147,6 +152,8 @@ void        base64_setBufferSize(int);
 // enables or disables including 'byteOrder' and compiling it's source on the fly
 void        base64_toggleReverseByteorder(const char* on_or_off_or_NULL);
 void        base64_toggleWriteLinebrakes(const char* on_or_off_or_NULL);
+void        base64_toggleDefaultTable(const char* std_or_web_or_NULL);
+void        base64_allowCharacter(byte allow);
 #endif
 
 #ifdef _OnTheFly_

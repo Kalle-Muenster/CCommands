@@ -21,9 +21,6 @@ yard* junk_getYard(void)
 {
 #if defined( using_commandLiner ) && defined( WITH_JUNKYARD ) && (!defined(CLINE_INTERNAL))
     if (!isCleansening()) {
-#if DEBUG
-        printf("%s(): will try fetching 'junk' dingens from commander!\n", __FUNCTION__);
-#endif
         return (yard*)getDingens("junk");
     }
 #endif
@@ -35,9 +32,6 @@ yard* junk_setYard( yard* junkyard )
 #if defined( using_commandLiner ) && defined( WITH_JUNKYARD ) && (!defined( CLINE_INTERNAL ))
     if ( junkyard ) {
         if ( !junk_yard ) {
-      #if DEBUG
-            printf( "setting up a commandLiner dingens for attaching a JunkYard instance\n" );
-      #endif
             addDingens( "junk", (junk_yard=junkyard), &junk_dropYard );
         }
     } else if ( junk_yard ) {
@@ -85,9 +79,6 @@ void dropZone( void* chunk )
     Junk* next = (Junk*)This->next;
     This->next = NULL;
     if( next ) {
-      #if DEBUG
-        printf( "%s(): enter next deeper level: %p\n", __FUNCTION__, next );
-      #endif
          // next->drop = &dropZone;
         // next->drop( next );
        // drop is recursive..., for regular cases it should be a
