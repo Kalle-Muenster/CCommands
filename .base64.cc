@@ -493,11 +493,8 @@ int base64_encodeData( char* dst, const byte* src, unsigned cbSrc )
     case 2: end.i8[2] = end.i8[2] == 'A' ? '=' : end.i8[2];
             end.i8[3] = end.i8[3] == 'A' ? '=' : end.i8[3];
     } asFrame( &dst[iD] ) = end;
-    iD += 4;
-    dst[iD] = '\0';
-
-    DEBUGLOG( dst )
-    return (int)iD;
+    dst[iD+=4] = '\0';
+    return iD;
 }
 #undef IncrementAndLineBreak
 
