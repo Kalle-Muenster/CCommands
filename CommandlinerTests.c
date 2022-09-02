@@ -9,4 +9,4 @@
 #define _OnTheFly_ CommandlinerTests
 #define CommandlinerTests ""
 #include ".CommandlinerTests.h"
-int main(int argc,char** argv);
+int main( int argc, char** argv );

@@ -67,7 +67,7 @@ static b64Frame* file_get_enc( b64Stream* strm )
 {
     b64Frame* fr = (b64Frame*)&((b64File*)strm)->buf;
     fr->u32 = 0;
-    fr->u8[3] = 3 - fread( fr, 1, 3, (FILE*)((b64File*)strm)->dat );
+    fr->u8[3] = (byte)(3 - fread( fr, 1, 3, (FILE*)((b64File*)strm)->dat ));
     return fr;
 }
 
@@ -470,6 +470,7 @@ b64File* base64_createFileStream( const char* fileName, const char* mode )
            (cmDtFunc)&base64_destream, sizeof(b64File) );
     uint mod = base64_initNewB64StreamStruct( mode, (b64Stream*)stream );
     mod = prepare_file_mode( mod );
+    clearAllErrors();
     if ( base64_initB64FileStreamStruct( stream, fileName, mod ) ) {
         return stream;
     } else {

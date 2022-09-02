@@ -7,7 +7,7 @@
     #undef BeginUserinputRequest
     #undef InitDatasetRequest
     #undef CreateNumericInputRequest
-	#undef CreateBooleanDecision
+    #undef CreateBooleanDecision
 # else
 
 #define InitDatasetRequest(MaxInputLength) const unsigned DatasetRequestName ## MAX_DIG_NUM = MaxInputLength; \

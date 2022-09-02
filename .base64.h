@@ -107,10 +107,10 @@ BASE64_API int         base64_encodeFile(const char* dst, const char* src, byte*
 BASE64_API int         base64_decodeFile(const char* dst, const char* src, byte* buffer, uint cbSize);
 
 // encode content of file dst to file src
-BASE64_API int         base64_encodeFileToFile(FILE* dst, FILE* src, byte* buffer, uint cbSize);
+BASE64_API ptdif       base64_encodeFileToFile(FILE* dst, FILE* src, byte* buffer, ptval cbSize);
 
 // decode base64 content from file src to file dst
-BASE64_API int         base64_decodeFileToFile(FILE* dst, FILE* src, byte* buffer, uint cbSize);
+BASE64_API ptdif       base64_decodeFileToFile(FILE* dst, FILE* src, byte* buffer, ptval cbSize);
 
 BASE64_API int         base64_encodeFromFile(const char* fileName, int* out_len);
 BASE64_API int         base64_decodeFromFile(const char* fileName, int* out_len);

@@ -150,7 +150,8 @@ int BindCommandLine( CommanderState* cmdLine, int count, char** argv )
 ArgVars RebuildCommandLine(void)
 {
     ArgVars rebuilt = { c.running->reserved, (unsigned short)0,
-                        c.running->numgum+1, {c.running->reserved} };
+                        (unsigned short)(c.running->numgum+1), 
+                       {c.running->reserved} };
 
     rebuilt.size = sprintf( &rebuilt.cmln[0],"\"%s/%s\"",
                             getPathOfTheCommander(),

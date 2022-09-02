@@ -12,6 +12,7 @@
 #undef pool_sets
 #undef pool_setb
 #undef pool_seti
+#undef pool_set8
 #undef pool_setc
 #undef pool_setf
 #undef pool_setfi
