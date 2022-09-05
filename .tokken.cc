@@ -23,7 +23,7 @@
 
   int USAGE(tokken)
   {
-  Synopsis("--<h|b>-<size[,count]> [options]");
+  Synopsis("--<h|b|3>-<size[,count]> [options]");
     printf("Options:\n\n\
   --h-<size[,count]> :  created tokken consisting from <size> count on hex digits\n\
   --3-<size[,count]> :  created tokken consisting from <size> count on base32 digits\n\
@@ -101,11 +101,11 @@ const char* tokken_createB32( int size )
     return creation;
 }
 
-tokken_Define tokken_define( const char* groupString, tokken_CharSet forMode )
+tokken_Generator tokken_define( const char* groupString, tokken_CharSet forMode )
 {
     char groupSep = 0;
     int groupCount = 0;
-    tokken_Define arg;
+    tokken_Generator arg;
     arg.charset = forMode;
     arg.size = 1;
     if ( isEmptyArg(groupString) ) {
@@ -245,7 +245,7 @@ const char* tokken_groupedB32( int size, const char* grouping )
     return zuruck;
 }
 
-const char* tokken_create( const tokken_Define* mode )
+const char* tokken_create( const tokken_Generator* mode )
 {
     if( mode->grouping ) {
         switch ( mode->charset ) {
@@ -293,7 +293,7 @@ int main(int argc,char**argv)
         sizeArg = getName('g');
     } else sizeArg = NoString;
 
-    tokken_Define grp; 
+    tokken_Generator grp; 
     if( search('h') ) {
         grp = tokken_define( sizeArg, tokken_HEX );
         countArg = sizeArg = getName('h');

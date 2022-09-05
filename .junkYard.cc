@@ -20,9 +20,8 @@ yard* junk_yard = NULL;
 yard* junk_getYard(void)
 {
 #if defined( using_commandLiner ) && defined( WITH_JUNKYARD ) && (!defined(CLINE_INTERNAL))
-    if (!isCleansening()) {
+    if (!isCleansening())
         return (yard*)getDingens("junk");
-    }
 #endif
     return junk_yard;
 }
@@ -32,6 +31,9 @@ yard* junk_setYard( yard* junkyard )
 #if defined( using_commandLiner ) && defined( WITH_JUNKYARD ) && (!defined( CLINE_INTERNAL ))
     if ( junkyard ) {
         if ( !junk_yard ) {
+      #if DEBUG
+            printf( "setting up commandLiner dingens for attaching JunkYard instance\n" );
+      #endif
             addDingens( "junk", (junk_yard=junkyard), &junk_dropYard );
         }
     } else if ( junk_yard ) {
@@ -79,6 +81,9 @@ void dropZone( void* chunk )
     Junk* next = (Junk*)This->next;
     This->next = NULL;
     if( next ) {
+      #if DEBUG
+        printf( "%s(): next piece: %p\n", __FUNCTION__, next );
+      #endif
          // next->drop = &dropZone;
         // next->drop( next );
        // drop is recursive..., for regular cases it should be a
@@ -99,18 +104,18 @@ void dropZone( void* chunk )
     switch( CASE ) {
         case 1:{
             #if DEBUG
-            printf("...droped destructorless chunk of junk: %p\n",This);
+            printf("... dropped destructorless memchunk: %p\n",This);
             #endif
         break; }
         case 2:{
             #if DEBUG
-            printf("...calling cleansener registered for junk-chunk: %p\n",This);
+            printf("...called cleansener for memchunk: %p\n",This);
             #endif
             (*(cmDtCall)This->dtor)();
         break;}
         case 3:{
             #if DEBUG
-            printf("...calling cleansener of object allocated at: %p\n", This->self );
+            printf("...calling cleansener of object at: %p\n", This->self );
             #endif
             (*(cmDtFunc)This->dtor)( (void*)This->self );
         break;}
@@ -121,7 +126,7 @@ void dropZone( void* chunk )
   #if DEBUG
     if ( next ) {
         junk_removed = junk_counter;
-        printf("%s(): found chunk number %i seem to be last chunk %p\n",__FUNCTION__, junk_counter, This );
+        printf("%s(): found chunk number %i was last chunk %p\n",__FUNCTION__, junk_counter, This );
     }
   #endif
 }
@@ -163,7 +168,7 @@ void yard_addDestructorChunk( Junk* chunk )
 #endif
     }
 #if DEBUG
-    printf( "%s(): added a cleansener for mem chunk: %p\n", __FUNCTION__, chunk );
+    printf( "%s(): added a cleansener for memchunk: %p\n", __FUNCTION__, chunk );
 #endif
 }
 
@@ -276,7 +281,7 @@ void* junk_objectivateMemory( cmDtFunc objDtor, void* objMem )
 {
 #if DEBUG
     yard_allocateJustOnlyJunk( objMem )->dtor = objDtor;
-    printf( "%s(): unknown sized 'alien' object at address %p\n", __FUNCTION__, objMem );
+    printf( "%s(): chunk of unknown sized 'alien' data as a new object at address %p\n", __FUNCTION__, objMem );
     return objMem;
 #endif
     yard_allocateJustOnlyJunk( objMem )->dtor = objDtor;
@@ -296,7 +301,7 @@ void junk_dropYard( void )
         dropZone( junkyard );
 
       #if DEBUG
-       printf( "%s(): done with cleansening junk yard! (removed %i pieces from: %p)\n", __FUNCTION__, junk_removed, junkyard );
+       printf( "%s(): done with cleansening the junk yard! (removed %i pieces from: %p)\n", __FUNCTION__, junk_removed, junkyard );
       #endif
         free( junkyard );
         junk_setYard( NULL );

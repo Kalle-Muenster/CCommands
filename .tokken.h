@@ -39,21 +39,21 @@ extern "C"{
 		tokken_B64 = 64
     } tokken_CharSet;
 
-	typedef struct TOKKEN_API tokken_Define tokken_Define;
-    typedef struct TOKKEN_API tokken_Define {
+	typedef struct TOKKEN_API tokken_Generator tokken_Generator;
+    typedef struct TOKKEN_API tokken_Generator {
         const byte*   grouping;
         tokken_CharSet charset;
         int               size;
-		const char*   (*create)( const tokken_Define* );
-    } tokken_Define;
+		const char*   (*create)( const tokken_Generator* );
+    } tokken_Generator;
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
 #include <tokken.h>
 #else
 
-    TOKKEN_API tokken_Define tokken_define( const char* grouping, tokken_CharSet mode );
-    TOKKEN_API const char*   tokken_create( const tokken_Define* mode );
-	#define                  tokken_Create( tokdef ) tokdef->create( tokdef )
+    TOKKEN_API tokken_Generator tokken_define( const char* grouping, tokken_CharSet mode );
+    TOKKEN_API const char*      tokken_create( const tokken_Define* mode );
+	#define                     tokken_Create( tokenerator ) tokdef->create( tokenerator )
 
 #endif
 
