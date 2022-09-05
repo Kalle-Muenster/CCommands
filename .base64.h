@@ -37,8 +37,7 @@ extern "C" {
 
 #if     BASE64_WITH_LINEBREAKS > 0
 #define BASE64_COMPRESSIONRATE  0.7384615384615385
-    //  1.35416_ is 4/3 * 65/64 
-    //  *this is related to the fact that output after each 64th byte
+    //  this is related to the fact that output after each 64th byte
     //  gets an additional linebreak byte inserted which even if that
     //  byte doesn't transports any information, indeed increases the
     //  size of the data which will be generated for output.
@@ -85,6 +84,16 @@ typedef union BASE64_API b64Frame {
 } b64Frame;
 typedef b64Frame BASE64_API const B64Nuller;
 #endif
+
+typedef struct BASE64_API b64State {
+    bool isTableInitialized;
+    bool isExternCall;
+    const char* CodeTable;
+    char codeTableBuffer[66];
+#if BASE64_VERFAHREN == 2
+    char derDickeBatzen[256];
+#endif
+} b64State;
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
 #include <base64.h>

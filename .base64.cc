@@ -15,7 +15,7 @@
 #define BASE64_CODING_TABLE BASE64_DEFAULTTABLE
 #endif
 #ifndef BASE64_BUFFER_SIZE
-#define BASE64_BUFFER_SIZE (512)
+#define BASE64_BUFFER_SIZE (1024)
 #endif
 
 #ifndef WINDOWS
@@ -24,7 +24,7 @@
 #if WINDOWS == true
     #include <conio.h>
     #define getch _getch
-#else //if LINUX == true
+#else //if LINUX ?
     #define getch getchar
 #endif
 
@@ -42,13 +42,13 @@
 #if BASE64_VERFAHREN == 1
 #define BASE64_SELECTED_ALGORYTHM \
         else for( uint c = 0; c < 65; ++c ) {\
-            if( CodeTable[c] == fourChars.i8[i] ) {\
+            if( EncoderState.CodeTable[c] == fourChars.i8[i] ) {\
                 bin3.u32 += ( c << SixBitIehShift(i) );\
                 c = 65;\
             } if( c == 64 )
 #elif BASE64_VERFAHREN == 2
 #define BASE64_SELECTED_ALGORYTHM \
-        else { int c = DerDickeBatzen[fourChars.i8[i]];\
+        else { int c = EncoderState.derDickeBatzen[fourChars.i8[i]];\
             if ( !(c<0) ) {\
                 bin3.u32 += ( c << SixBitIehShift(i) );\
             } else
@@ -91,10 +91,12 @@ Changing Persists:\n\n\
     --c-<codetable>   : defines own coding table (64 chars + terminating '=' sign!)\n\
     --allow           : allows special character being used within code tables.  \n\
       [on|off|'char']   %s\n\
-     -r               : resets the current coding table back to standard.\n\
-    --f-[on|off]      : toggles 'reverse byteorder during decode' setting.\n\
+     -r               : resets the current coding table back to default.\n\
+    --w-[std|web]     : select base64 table variant is used as 'default'\n\
                         %s\n\
-    --l-[on|off]      : toggles 'handle linebreaks during decode' setting.\n\
+    --f-[on|off]      : toggles 'use reversed byteorder' setting.\n\
+                        %s\n\
+    --l-[on|off]      : toggles 'add linebreaks to data' setting.\n\
                         %s\n\
     --b-<buffersize>  : sets new size for internal used buffer\n\
                         %i byte\n\n";
@@ -105,16 +107,17 @@ int USAGE(base64)
     Assert('h', "no arguments where given!");
    #ifdef using_environMentor
     environMentor_CheckAndEnable();
-    Synopsis("[options] <[--e/--d]-SourceFile> [--o-OutputFile]\n  base64 [persitent options]\n");
+    Synopsis("[options] <[--e/--d]-InputFile> [--o-OutputFile]\n  base64 [persitent options]\n");
     printf( DOKU(base64) );
     printf( DOKU(base64_persist),
-        BASE64_ALLOW_SPECIAL_CHARACTERS?toQuoted(BASE64_SPECIAL_CHARACTERS):"DISABLED",
+        BASE64_ALLOW_SPECIAL_CHARACTERS ? toQuoted(BASE64_SPECIAL_CHARACTERS) : "DISABLED",
+        BASE64_DEFAULTTABLE[63] == '_' ? "WebSafe" : "Standard",
         BASE64_REVERSED_ORDER ?"ENABLED":"DISABLED",
         BASE64_WITH_LINEBREAKS?"ENABLED":"DISABLED",
         BASE64_BUFFER_SIZE
     );
    #else
-    Synopsis("[options] <[--e/--d]-SourceFile> [--o-OutputFile]\n");
+    Synopsis("[options] <[--e/--d]-InputFile> [--o-OutputFile]\n");
     printf( DOKU(base64) );
    #endif
     if(isSwitch('v'))
@@ -124,21 +127,24 @@ int USAGE(base64)
 }
 #endif
 
+b64State EncoderState = {
+    false, true, NULL, {0}
+};
 
-char _codeTableBuffer[65];
-bool _isTableInitialized = false;
-bool _isExternCall = true;
-const char* CodeTable;
+//bool _isTableInitialized = false;
+//bool _isExternCall = true;
+//const char* CodeTable;
+//char _codeTableBuffer[66];
 
-const char* base64defaultTable = {
+const char base64defaultTable[66] = {
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
 };
 
-const char* base64websafeTable = {
+const char base64websafeTable[66] = {
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_="
 };
 
-#ifdef using_environMentor //////////////////////////////////////////
+#ifdef using_environMentor ////////////////////////////////////////////
 // functions for changing persistent settings using .environMentor.h //
 ///////////////////////////////////////////////////////////////////////
 
@@ -159,27 +165,28 @@ const char* base64_popTable(void)
     return BASE64_PUSHED_TABLE;
 }
 
-const char* base64_pushTable(const char* table)
+const char* base64_pushTable( const char* table )
 {
-    if(table[0]!='\0') {
-        char buffer[MAX_NAM_LEN];
-        sprintf(&buffer[0],"\"%s\"",getFeatured("BASE64_CODING_TABLE").value.string);
+    const char* loaded = getFeatured("BASE64_CODING_TABLE").value.string;
+    if( table[0] != '\0' ) {
+        char buffer[68];
+        sprintf( &buffer[0], "\"%s\"", loaded );
         beginPersistChange(LOCAL);
-            setPersistEntry("BASE64_PUSHED_TABLE",&buffer[0]);
-            sprintf(&buffer[0],"\"%s\"",table);
-            setPersistEntry("BASE64_CODING_TABLE",&buffer[0]);
+            setPersistEntry( "BASE64_PUSHED_TABLE", &buffer[0] );
+            sprintf( &buffer[0], "\"%s\"", table );
+            setPersistEntry( "BASE64_CODING_TABLE", &buffer[0] );
         commitPersistChange();
-        printf("Table Pushed!\n");
-    } return BASE64_CODING_TABLE;
+        printf( "Table Pushed!\n" );
+    } return loaded;
 }
 
-void base64_setBufferSize(int newSize)
+void base64_setBufferSize( int newSize )
 {
-    if(newSize>640000) {
-        setErrorText("please don't allocate buffers greater then 640k please");
+    if( newSize > 640000 ) {
+        setErrorText( "please don't allocate buffers greater then 640k please" );
     } else {
         beginPersistChange(LOCAL);
-            tempf("(%i)",(const char*)(ptval)newSize);
+            tempf( "(%i)", (const char*)(ptval)newSize );
             setPersistEntry("BASE64_BUFFER_SIZE",getTemp());
             setPersistEntry("CYCLE_SIZE",getTemp());
             int cycle_size = newSize / 64;
@@ -192,40 +199,39 @@ void base64_setBufferSize(int newSize)
 
 void base64_toggleDefaultTable( const char* stdOrWeb )
 {
-	if (!stdOrWeb) stdOrWeb = NoString;
-	int useWebTable = BASE64_DEFAULTTABLE[63] == '_';
-	if((!strcmp(stdOrWeb,"std"))||(!strcmp(stdOrWeb,"web"))) {
-        useWebTable = stdOrWeb[1] == 'e';
-	} else { 
-		useWebTable -= 1;
-		useWebTable *= -1;
-	}
-	if( useWebTable ) {
-		base64_allowCharacter( (byte)1 );
-	}
+    if (!stdOrWeb) stdOrWeb = NoString;
+    int useWebTable = BASE64_DEFAULTTABLE[63] == '_';
+    if((!strcmp(stdOrWeb,"std"))||(!strcmp(stdOrWeb,"web")))
+        useWebTable = stdOrWeb[1] == 't';
+    // toggle the current setting if NULL was passed
+    useWebTable = (useWebTable-1)*(-1);
+    if( useWebTable ) base64_allowCharacter( (byte)1 );
+
 	setMacroRaw( "BASE64_DEFAULTTABLE", useWebTable
                ? "base64websafeTable" : "base64defaultTable" );
-    printf( "now using base64 default table: %s\n",
+    printf( "The default base64 table now is: %s\n",
 	         useWebTable ? "WebSafe" : "Standard" );
 }
 
 void base64_toggleReverseByteorder( const char* onOrOff )
 {
-    int ReverseDuringDecode = BASE64_REVERSED_ORDER;
+    int ReverseByteOrderSetting = BASE64_REVERSED_ORDER;
+    if (!onOrOff) onOrOff = NoString;
     if((!strcmp(onOrOff,"on"))||(!strcmp(onOrOff,"off")))
-        ReverseDuringDecode = onOrOff[1]=='f';
-    // toggle current setting if NULL was passed
-    setMacroNum("BASE64_REVERSED_ORDER",(ReverseDuringDecode-1)*(-1));
-    printf( "reverse byte order during decode: %s\n",
-            ReverseDuringDecode ? "DISABLED" : "ENABLED" );
+        ReverseByteOrderSetting = onOrOff[1]=='f';
+    // toggle the current setting if NULL was passed
+    setMacroNum( "BASE64_REVERSED_ORDER", (ReverseByteOrderSetting-1)*(-1) );
+    printf( "Reversing byte order during en/de coding operations: %s\n",
+            ReverseByteOrderSetting ? "DISABLED" : "ENABLED" );
 }
 
-void base64_toggleWriteLinebrakes(const char* onOrOff)
+void base64_toggleWriteLinebrakes( const char* onOrOff )
 {
+    if (!onOrOff) onOrOff = NoString;
     int EncoderWritesLinebreaks = BASE64_WITH_LINEBREAKS;
     if((!strcmp(onOrOff,"on"))||(!strcmp(onOrOff,"off")))
         EncoderWritesLinebreaks = onOrOff[1]=='f';
-    // toggle current setting if NULL was passed
+    // toggle the current setting if NULL was passed
     setMacroNum("BASE64_WITH_LINEBREAKS",(EncoderWritesLinebreaks-1)*(-1));
     printf( "encoded output contains line break every 64 chars: %s\n",
             EncoderWritesLinebreaks ? "DISABLED" : "ENABLED" );
@@ -235,9 +241,9 @@ void base64_toggleWriteLinebrakes(const char* onOrOff)
 // passing char argument: add given character to the white list.
 // passing true/false: enable or disable to allow all characters
 //                     contained in the white list.
-void base64_allowCharacter(byte allowed)
+void base64_allowCharacter( byte allowed )
 {
-    if(allowed>1) {
+    if( allowed > 1 ) {
 		int strings = 2;
         pool_setf("\"%s",BASE64_SPECIAL_CHARACTERS);
         if (isSpecialCharacter(allowed) && (!isAllowedSpecialCharacter(allowed))) {
@@ -245,17 +251,17 @@ void base64_allowCharacter(byte allowed)
         } pool_setc('\"',1);
         char* whitelist = pool_merge( strings );
         beginPersistChange(LOCAL);
-            setPersistEntry("BASE64_SPECIAL_CHARACTERS",whitelist);
+            setPersistEntry( "BASE64_SPECIAL_CHARACTERS", whitelist );
         commitPersistChange();
-        printf("white listed characters: %s\n",whitelist);
+        printf( "white listed characters: %s\n", whitelist );
     } else {
-        if(allowed){
+        if( allowed ) {
             setMacroNum("BASE64_ALLOW_SPECIAL_CHARACTERS",1);
-            setTemp("white listed characters are ALLOWED\n");
-        }else{
+            setTemp( "white listed characters are ALLOWED\n" );
+        } else {
             setMacroNum("BASE64_ALLOW_SPECIAL_CHARACTERS",0);
-            setTemp("white list disabled!\n");
-        } fwrite(getTemp(),1,strlen(getTemp()),stdout);
+            setTemp( "white list disabled!\n" );
+        } fwrite( getTemp(), 1, strlen(getTemp()), stdout );
     }
 }
 #else // if not using_environMentor
@@ -284,9 +290,9 @@ const char* saveTableFile( char* b64table )
     } return (const char*)b64table;
 }
 
-
+/*
 #if  BASE64_VERFAHREN == 2
-char DerDickeBatzen[256]; /* = {
+char DerDickeBatzen[256];  = {
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -314,9 +320,9 @@ char DerDickeBatzen[256]; /* = {
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
     -1,-1,-1,-1,-1,-1,-1,-1
-}; */
+};
 #endif
-
+*/
 
 // decides which base64 table will be used for any following de/en code opperations.
 // It gegebenenfalls loads it from 'file' or from 'string' if this maybe was defined
@@ -337,8 +343,8 @@ const char* loadeCode(void)
     const char* loade = NULL;
     while( coderLoader[++i] != '\0' ) {
         if( (coderLoader[i] == '=') && ( i >= 64 ) ) {
-            if(_isExternCall ) {
-                DEBUGLOG("call from other command!")
+            if( EncoderState.isExternCall ) {
+                DEBUGLOG( "call from other command!" )
                 loade = &coderLoader[i - 64];
             } else {
                 loade = saveTableFile( &coderLoader[i - 64] );
@@ -347,20 +353,20 @@ const char* loadeCode(void)
     } if( !loade ) {
         FILE* codeFile = fopen( coderLoader, "r" );
         if( codeFile ) {
-            fread( &_codeTableBuffer[0], 1, 65, codeFile );
+            fread( &EncoderState.codeTableBuffer[0], 1, 65, codeFile );
             fflush(codeFile); fclose(codeFile);
-            loade = &_codeTableBuffer[0];
+            loade = &EncoderState.codeTableBuffer[0];
         } else
             loade = BASE64_DEFAULTTABLE;
     }
    #if BASE64_VERFAHREN == 2
     for( int i=0; i<256; ++i )
-        DerDickeBatzen[i] = -1;
+        EncoderState.derDickeBatzen[i] = -1;
     for( int i=0; i<65; ++i )
-        DerDickeBatzen[loade[i]] = i;
+        EncoderState.derDickeBatzen[loade[i]] = i;
    #endif
-    _isTableInitialized = true;
-    DEBUGFMT("using coding table: %s",loade)
+    EncoderState.isTableInitialized = true;
+    DEBUGFMT( "using coding table: %s", loade )
     return loade;
 }
 
@@ -375,7 +381,7 @@ char isSpecialCharacter( char check )
            : false;
 }
 
-// check if char is 'special' AND if that spacial is actually whitelisted at least
+// check if char is 'special' AND if that 'spacial' also is whitelisted
 char isAllowedSpecialCharacter( char special )
 {
     char* chars = ((char*)&BASE64_SPECIAL_CHARACTERS[0]-1);
@@ -413,7 +419,7 @@ b64Frame base64_encodeFrame( b64Frame frame )
    #else
     for( uint i=0; i<4; ++i ) {
    #endif
-        frame.u8[i] = CodeTable[threeByte%64];
+        frame.u8[i] = EncoderState.CodeTable[threeByte%64];
         threeByte >>= 6;
     } return frame;
 }
@@ -457,13 +463,13 @@ b64Frame base64_decodeFrame( b64Frame fourChars )
 
 
 #if BASE64_WITH_LINEBREAKS == 1
-#define IncrementAndLineBreak iS+=3; if((iD+=4)%64==0)dst[iD+lB++]='\n'
+#define IncrementAndLineBreak if( ( ( lO + (iD+=4)) % 64 ) == 0 ) dst[iD+lB++]='\n'
 #else
-#define IncrementAndLineBreak iD+=4; iS+=3
+#define IncrementAndLineBreak iD+=4
 #endif
 
 // encode data batzen src to base64 string dst... (returns encoded size)
-int base64_encodeData( char* dst, const byte* src, unsigned cbSrc )
+int base64_encodeData( char* dst, const byte* src, unsigned cbSrc, int lO )
 {
     uint lB = 0;
     uint iD = 0;
@@ -478,43 +484,49 @@ int base64_encodeData( char* dst, const byte* src, unsigned cbSrc )
     b64Frame end = {0};
     while ( iS < cbSrc ) {
         end.u8[lB++] = src[iS++];
-    } cbSrc -= iM;
+    } // if ( iM == 3 ) cbSrc -= 3;  // <<<<
+    cbSrc -= iM;
     iS = lB = 0;
 
-    while( iS < cbSrc ) {
-        asFrame( &dst[lB+iD] ) = base64_encodeFrame( asFrame( &src[iS] ) );
-        IncrementAndLineBreak;
-    }
+    do { asFrame( &dst[lB+iD] ) = base64_encodeFrame( asFrame( &src[iS] ) );
+       IncrementAndLineBreak;
+    } while ( (iS+=3) < cbSrc );
 
-    iD += lB;
     end = base64_encodeFrame( end );
     switch (iM) {
     case 1: end.i8[1] = end.i8[1] == 'A' ? '=' : end.i8[1];
     case 2: end.i8[2] = end.i8[2] == 'A' ? '=' : end.i8[2];
             end.i8[3] = end.i8[3] == 'A' ? '=' : end.i8[3];
-    } asFrame( &dst[iD] ) = end;
-    dst[iD+=4] = '\0';
-    return iD;
+    } asFrame( &dst[iD+lB] ) = end;
+    IncrementAndLineBreak;
+
+    dst[iD+=lB] = '\0';
+    return (int)iD;
 }
 #undef IncrementAndLineBreak
 
 // decode base64 string 'src' to byte data 'dst'... (returns decoded size)
 int base64_decodeData( byte* dst, const char* src, uint cbSrc )
 {
-    uint iS = 0u - 4u;
-    uint iD = 0u - 3u;
+    uint iS = 0u;
+    uint iD = 0u;
     cbSrc = cbSrc ? cbSrc - 4 : EMPTY;
 
 #if BASE64_WITH_LINEBREAKS == 1
-    do{ if ( src[iS+=4] == '\n' ) ++iS;
-    } while ( (iS < cbSrc)
-         && !( asFrame( &dst[iD+=3] ) = base64_decodeFrame( asFrame(&src[iS]) ) ).i8[3] );
+    b64Frame copy;
+    do { if ( src[iS] == '\n' ) ++iS;
+        copy = base64_decodeFrame( asFrame( &src[iS] ) );
+        asFrame( &dst[iD] ) = copy;
+        iD += 3;
+    } while ( (copy.i8[3] == 0 ) && ( ( iS += 4 ) <= cbSrc ) );
 #else
-    while ( (!(
-        asFrame( &dst[iD+=3] ) = base64_decodeFrame( asFrame( &src[iS+=4] ) )
-            ).i8[3]) && (iS < cbSrc) );
+    while ( ( asFrame( &dst[iD] ) = base64_decodeFrame( asFrame( &src[iS] ) )
+        ).i8[3] == 0 ) {
+        iD += 3;
+        if( (iS += 4) > cbSrc )
+            break;
+    }
 #endif
-    if ( asFrame( &src[iS] ).i8[0] != 0 ) iD += 3;
     return (int)iD;
 }
 
@@ -574,12 +586,12 @@ base64_decodeFromFile( const char* fileName, int* out_len )
     uint pos = fileSize;
     char readbuffer[MAX_NAM_LEN+1] = {0};
     int outPosition = 0;
-    while(pos>3) {
+    while( pos > 3 ) {
         int linebreak=0;
-        pos-=fscanf(f,"%s\n",&readbuffer[0]);
+        pos -= fscanf( f, "%s\n", &readbuffer[0] );
         char* r = &readbuffer[0];
         int p = 0;
-        while(*r){ ++p;
+        while( *r ) { ++p;
             if(*r==10||*r==13) {
                 *r = '\0';
             } else {
@@ -621,10 +633,7 @@ ptdif base64_encodeFileToFile( FILE* dst, FILE* src, byte* buf, ptval siz )
         do{ siz = srcSiz < size ? srcSiz : size;
             siz = fread( srcBuf, 1, siz, src );
             size -= siz;
-            int dec = base64_encodeData( (char*)dstBuf, srcBuf, (uint)siz );
-#if BASE64_WITH_LINEBREAKS == 1
-            if( cpos % 65 == 64 ) cpos += fwrite( "\n", 1, 1, dst );
-#endif
+            int dec = base64_encodeData( (char*)dstBuf, srcBuf, (uint)siz, cpos % 65 );
             cpos += (long)fwrite( dstBuf, 1, dec, dst );
         } while ( siz == srcSiz );
         siz = cpos;
@@ -651,7 +660,7 @@ ptdif base64_encodeFileToFile( FILE* dst, FILE* src, byte* buf, ptval siz )
                 fwrite( &dat.u8[0], 1, 4, dst );
                 dat.u32 = *(uint*)"====";
 #if BASE64_REVERSED_ORDER == 0
-                dat.i8[0] = CodeTable[0];
+                dat.i8[0] = EncoderState.CodeTable[0];
 #endif
                 fwrite( &dat.u8[0], 1, 4, dst );
                 lb += 4;
@@ -659,7 +668,7 @@ ptdif base64_encodeFileToFile( FILE* dst, FILE* src, byte* buf, ptval siz )
         } else {
             dat.u32 = *(uint*)"====";
 #if BASE64_REVERSED_ORDER == 0
-            dat.i8[0] = CodeTable[0];
+            dat.i8[0] = EncoderState.CodeTable[0];
 #endif
             fwrite( &dat.u8[0], 1, 4, dst );
         } siz = cpos + lb + 4;
@@ -766,11 +775,11 @@ const char* base64_encode( const byte* data, uint size )
         size = (uint)strlen((const char*)data);
     uint theBiggerSize = BASE64_ENCODED_SIZE(size);
     if( pool_sizePlan( theBiggerSize ) > 0 ) {
-        base64_encodeData( pool_setc('\0',theBiggerSize), data, size );
+        base64_encodeData( pool_setc('\0',theBiggerSize), data, size, 0 );
         return pool_get();
     } else {
         char* chunk = (char*)junk_allocateJunkChunk( theBiggerSize );
-        base64_encodeData( chunk, data, size );
+        base64_encodeData( chunk, data, size, 0 );
         return chunk;
     }
 }
@@ -791,11 +800,18 @@ const byte* base64_decode( const char* data, uint* size )
     }
 }
 
+const char* base64_changeTable( const char* changeTo )
+{
+    const char* oldtable = EncoderState.CodeTable;
+    EncoderState.CodeTable = changeTo;
+    return oldtable;
+}
+
 const char* base64_setTable( const char* newTable )
 {
     setOption( 'c', newTable );
-    _isTableInitialized = false;
-    return CodeTable = loadeCode();
+    EncoderState.isTableInitialized = false;
+    return EncoderState.CodeTable = loadeCode();
 }
 
 const char* base64_checkTable( const char* newTable )
@@ -876,7 +892,7 @@ const char* base64_newTable( const char* newTable )
         char* tbl = (char*)setOption( 'c', newTable );
         tbl[64]='=';
         tbl[65]='\0';
-        return CodeTable = loadeCode();
+        return EncoderState.CodeTable = loadeCode();
     }
 }
 
@@ -895,13 +911,13 @@ void base64_dtor(void)
 void base64_Initialize(void)
 {
  #ifdef _OnTheFly_
-    if (!_isTableInitialized) {
+    if (!EncoderState.isTableInitialized) {
         Base64Pool = pool_InitializeCycle();
         pool_push();
         Base64Pool = pool_detach();
         junk_installCleansener( &base64_dtor );
     }
-    if(!_isExternCall) {
+    if (!EncoderState.isExternCall) {
    #if DEBUG
         printf("base64_Initialize(): call from other command!");
    #endif
@@ -911,23 +927,23 @@ void base64_Initialize(void)
         const char* tbl = BASE64_DEFAULTTABLE;
    #endif
         if( isValidArg( tbl ) ) {
-            CodeTable = tbl;
-            _isTableInitialized = true;
+            EncoderState.CodeTable = tbl;
+            EncoderState.isTableInitialized = true;
         }
     }
  #else
     QuickCommandInit();
     Pool = pool_getBottom();
  #endif
-    if ( !_isTableInitialized ) CodeTable = loadeCode();
+    if ( !EncoderState.isTableInitialized ) EncoderState.CodeTable = loadeCode();
 }
 
 // return the currently loaded coding table...
 // (calls 'base64_Initialize()' implicitely)
 const char* base64_getTable(void)
 {
-    if( !_isTableInitialized ) base64_Initialize();
-    return CodeTable;
+    if( !EncoderState.isTableInitialized ) base64_Initialize();
+    return EncoderState.CodeTable;
 }
 
 // return the regular base64 coding table...
@@ -1064,7 +1080,7 @@ int main(int argc,char** argv)
     base64_Initialize();
 
     if (isModus("verbose"))
-        printf("\nusing base64 code table:\n%s\n\n", CodeTable);
+        printf("\nusing base64 code table:\n%s\n\n", EncoderState.CodeTable);
 
     ExitOnError( "Initialization" );
 
@@ -1086,11 +1102,11 @@ int main(int argc,char** argv)
 
     int bytesWritten = 0;
     int bytesCoded = 0;
-    byte* outbuffer = (byte*)pool_setc(0,BASE64_BUFFER_SIZE);
+    byte* outbuffer = (byte*)pool_setc( 0, BASE64_BUFFER_SIZE );
 
     if( hasOption('t') ) {
-        bytesCoded = (Mode=='e') ? base64_encodeData((char*)outbuffer,getName(Mode), strlen(getName(Mode))):
-                     (Mode=='d') ? base64_decodeData((byte*)outbuffer,getName(Mode), strlen(getName(Mode))):
+        bytesCoded = (Mode=='e') ? base64_encodeData( (char*)outbuffer, getName(Mode), strlen(getName(Mode)), 0 ):
+                     (Mode=='d') ? base64_decodeData( (byte*)outbuffer, getName(Mode), strlen(getName(Mode)) ):
     0;} else if( isDefault('o') ) {
         bytesCoded = (Mode=='e') ? base64_encodeFromFile( getName(Mode), &bytesCoded ):
                      (Mode=='d') ? base64_decodeFromFile( getName(Mode), &bytesCoded ):
