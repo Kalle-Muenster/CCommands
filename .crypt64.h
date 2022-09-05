@@ -10,8 +10,9 @@
 
 #include <stdlib.h>
 
+#ifndef COMMANDLINER_ESCENTIALS_DEFINED
 #include "./eszentielle/.CommandLinerTypes.h"
-
+#endif
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
 #define CRYPS64_API __declspec(dllexport)
@@ -75,9 +76,12 @@ extern "C" {
 #else
 
    CRYPS64_API void     crypt64_Initialize( bool init );
+   CRYPS64_API ulong    crypt64_currentContext( void );
+
 
    CRYPS64_API K64F*    crypt64_createFileStream( K64* key, const char* path, const char* mode );
    CRYPS64_API uint     crypt64_sread( byte* dst, uint size, uint count, K64F* cryps );
+   CRYPS64_API uint     crypt64_nonbuffered_sread( byte* dst, uint size, uint count, K64F* cryps );
    CRYPS64_API uint     crypt64_swrite( const byte* src, uint size, uint count, K64F* cryps );
    CRYPS64_API k64Chunk crypt64_getYps( K64F* vonDa );
    CRYPS64_API uint     crypt64_putYps( k64Chunk dieses, K64F* nachDa );
@@ -91,13 +95,17 @@ extern "C" {
    CRYPS64_API K64* crypt64_initializeKey(K64* key,ulong value);
    CRYPS64_API K64* crypt64_createKeyFromPass(const char* passphrase);
    CRYPS64_API K64* crypt64_createKeyFromHash(ulong hash);
+   CRYPS64_API ulong crypt64_getHashFromKey(K64* key);
    CRYPS64_API ulong crypt64_calculateHashValue( const byte* data, int size );
    CRYPS64_API void crypt64_invalidateKey(K64* key);
    CRYPS64_API int  crypt64_isValidKey(K64* key);
-
+   
    CRYPS64_API int  crypt64_prepareContext( K64* key, byte mod );
    CRYPS64_API int  crypt64_releaseContext( K64* key );
-
+   CRYPS64_API bool crypt64_setContext(K64* key, byte mod);
+   CRYPS64_API int crypt64_verifyValidator( K64* key, const byte* dat );
+   CRYPS64_API const char* crypt64_createValidator( K64* key );
+   CRYPS64_API const char* crypt64_swapTable(K64* key);
    CRYPS64_API uint crypt64_encrypt(K64* key64, const byte* data, uint size, char* dest);
    CRYPS64_API uint crypt64_decrypt(K64* key64, const char* data, uint size, byte* dest);
    CRYPS64_API uint crypt64_encryptFile(K64* key64, const char* src, const char* dst);
