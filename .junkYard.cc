@@ -115,7 +115,7 @@ void dropZone( void* chunk )
         break;}
         case 3:{
             #if DEBUG
-            printf("...calling cleansener of object at: %p\n", This->self );
+            printf("...calling cleansener of object at: %p\n", (void*)This->self );
             #endif
             (*(cmDtFunc)This->dtor)( (void*)This->self );
         break;}

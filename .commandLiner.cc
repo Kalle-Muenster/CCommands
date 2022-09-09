@@ -1139,6 +1139,12 @@ int tempf(const char* fmt, const char* name) {
     return (int)strlen(c.running->reserved);
 }
 
+cmBl isQuoted( cmLn arg )
+{
+    const int end = (int)strlen(arg) - 1;
+    return (arg[0] == '\"' && arg[end] == '\"');
+}
+
 cmLn unQuoted( cmLn arg )
 {
     if( isQuoted( arg ) ) {
@@ -1171,12 +1177,6 @@ cmLn toQuoted(cmLn arg)
     return ( renew >= 0 )
          ? strcpy( c.running->names[renew], getTemp() )
          : getTemp();
-}
-
-cmBl isQuoted(cmLn arg)
-{
-    const int end = (int)strlen(arg)-1;
-    return ( arg[0]=='\"' && arg[end]=='\"' );
 }
 
 uint toSplitList(char* sepList, char* fromTo)

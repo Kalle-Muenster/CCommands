@@ -1,6 +1,12 @@
+#ifndef LOCUS_POCUS
 #define LOCUS_POCUS ("C:/CMD/CCommands")
-#define MAX_NUM_GUM (32)
+#endif
+#ifndef MAX_NUM_GUM
+#define MAX_NUM_GUM (24)
+#endif
+#ifndef MAX_NAM_LEN
 #define MAX_NAM_LEN (255)
+#endif
 #ifndef ARGUM_SLASHING
 #define ARGUM_SLASHING (1)
 #endif

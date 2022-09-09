@@ -925,7 +925,7 @@ uint crypt64_swrite( const byte* src, uint size, uint count, K64F* cryps )
             uint siz = (size * count);
             siz += ((3 - (siz % 3)) % 3);
             const byte* end = src + siz;
-            b64Frame data = {0};
+            b64Frame data;
             do{ EncoderState.CodeTable = cryps->dec;
                 data.u32 = *(uint*)src;
                 data = base64_encodeFrame( data );
@@ -1138,7 +1138,7 @@ int main(int argc,char**argv)
             const char* data = getName('v');
             if( isSwitch('t') ) {
                 printf("hash value of string: '%s' is %llu\n",
-                        data, crypt64_calculateHashValue( data, strlen(data) ) );
+                        data, crypt64_calculateHashValue( data, (int)strlen(data) ) );
             } else if ( isSwitch('f') ) {
                 FILE* f = fopen( data, "rb" );
                 if (f) {

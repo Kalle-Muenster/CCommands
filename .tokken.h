@@ -52,7 +52,7 @@ extern "C"{
 #else
 
     TOKKEN_API tokken_Generator tokken_define( const char* grouping, tokken_CharSet mode );
-    TOKKEN_API const char*      tokken_create( const tokken_Define* mode );
+    TOKKEN_API const char*      tokken_create( const tokken_Generator* mode );
 	#define                     tokken_Create( tokenerator ) tokdef->create( tokenerator )
 
 #endif

@@ -9,10 +9,7 @@
 #include ".cConfig.h"
 #endif
 
-#define COMMAND_LINER_arg(SETTING,VALUE) "\
-#define " ## SETTING ## " (" ## VALUE ## ")\n"
-
-#define COMMAND_LINER_var(SETTING,VALUE) "\
+#define COMMAND_LINER_SETTING(SETTING,VALUE) "\
 #ifndef " ## SETTING ## "\n\
 #define " ## SETTING ## " (" ## VALUE ## ")\n\
 #endif\n"
@@ -20,6 +17,12 @@
 #include <stdio.h>
 #include ".commandLiner.h"
 
+#ifndef  MAX_NAM_LEN
+unsigned MAX_NAM_LEN=255;
+#endif
+#ifndef  MAX_NUM_GUM
+unsigned MAX_NUM_GUM=8;
+#endif
 #ifndef  ARGUM_SLASHING
 unsigned ARGUM_SLASHING=0;
 #endif
@@ -58,45 +61,51 @@ int ShowConfiguration(void)
     if( hasOption('h') || wasError() )
         USAGE(cConfig);
 
+    uint system4cc = SYSTEM;
 #ifndef LOCUS_POCUS
     const char *const LOCUS_POCUS = getPathOfTheCommander();
 #endif
 
-    printf("\nCurrent Command-Liner Configuration is:\n\n");
-    printf("CCommands located in: %s\n",LOCUS_POCUS);
+    printf("\nCurrent Command-Liner Configuration:\n\n");
+
+    printf("Scripts configured for running on: %s\n",(char*)&system4cc);
+    printf("CCommands scripts folder location: %s\n\n",LOCUS_POCUS);
+
+    printf("Total bytes command line buffer: %i\n",COMMANDER_BUFFER);
     printf("Maximum length of each argument: %i\n",MAX_NAM_LEN);
-    printf("Maximum number of arguments: %i\n",MAX_NUM_GUM);
-    printf("Total amount on commander buffer: %i\n\n",COMMANDER_BUFFER);
-    printf("auto-slashing:    %s\n",  ARGUM_SLASHING?"ENABLED":"DISABLED");
-    printf("quote-endoubling: %s\n",QUOTE_ENDOUBLING?"ENABLED":"DISABLED");
-    printf("bracket-ecking:   %s\n\n",BRACKET_ECKING?"ENABLED":"DISABLED");
-    printf("space-endashng:    %s\n\n",SPACE_ENDASHING?"ENABLED":"DISABLED");
+    printf("Maximum number of all arguments: %i\n\n",MAX_NUM_GUM);
+
+    printf("Commandline input conversion settings:\n");
+    printf("auto-slashing:    %s\n",   ARGUM_SLASHING?"ENABLED":"DISABLED");
+    printf("quote-endoubling: %s\n", QUOTE_ENDOUBLING?"ENABLED":"DISABLED");
+    printf("bracket-ecking:   %s\n",   BRACKET_ECKING?"ENABLED":"DISABLED");
+    printf("space-endashng:   %s\n\n",SPACE_ENDASHING?"ENABLED":"DISABLED");
     return getErrorCode();
 }
 
 void SaveCommandLinerConfiguration( int maxnumgum, int maxnamlen, int autoslash,
                                     int autoqoute, int autobrack, int autospack )
 {
-    if(CheckForError())
+    if( CheckForError() )
         return;
 
-    char  filename[128];
-    char  SettingsBuffer[512];
+    char  filename[MAX_NAM_LEN];
+    char  SettingsBuffer[456+MAX_NAM_LEN];
     char* buffer = &SettingsBuffer[0];
 
     sprintf( &filename[0],"%s/eszentielle/.CommandLinerSetting.h",
              getPathOfTheCommander() );
 
-    strcpy(buffer,COMMAND_LINER_arg("LOCUS_POCUS","\"%s\""));
-    strcat(buffer,COMMAND_LINER_arg("MAX_NUM_GUM","%i"));
-    strcat(buffer,COMMAND_LINER_arg("MAX_NAM_LEN","%i"));
-    strcat(buffer,COMMAND_LINER_var("ARGUM_SLASHING","%i"));
-    strcat(buffer,COMMAND_LINER_var("QUOTE_ENDOUBLING","%i"));
-    strcat(buffer,COMMAND_LINER_var("BRACKET_ECKING","%i"));
-    strcat(buffer,COMMAND_LINER_var("SPACE_ENDASHING","%i"));
-    strcat(buffer,COMMAND_LINER_var("SYSTEM","%s"));
+    strcpy(buffer,COMMAND_LINER_SETTING("LOCUS_POCUS","\"%s\""));
+    strcat(buffer,COMMAND_LINER_SETTING("MAX_NUM_GUM","%i"));
+    strcat(buffer,COMMAND_LINER_SETTING("MAX_NAM_LEN","%i"));
+    strcat(buffer,COMMAND_LINER_SETTING("ARGUM_SLASHING","%i"));
+    strcat(buffer,COMMAND_LINER_SETTING("QUOTE_ENDOUBLING","%i"));
+    strcat(buffer,COMMAND_LINER_SETTING("BRACKET_ECKING","%i"));
+    strcat(buffer,COMMAND_LINER_SETTING("SPACE_ENDASHING","%i"));
+    strcat(buffer,COMMAND_LINER_SETTING("SYSTEM","%s"));
 
-    FILE* f = fopen(&filename[0],"w");
+    FILE* f = fopen( &filename[0], "w" );
     fprintf(f,buffer,getPathOfTheCommander(), maxnumgum, maxnamlen,
              autoslash, autoqoute, autobrack, autospack, SystemFourCC );
     fflush(f); fclose(f);
