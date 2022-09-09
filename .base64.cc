@@ -111,7 +111,7 @@ int USAGE(base64)
     printf( DOKU(base64) );
     printf( DOKU(base64_persist),
         BASE64_ALLOW_SPECIAL_CHARACTERS ? toQuoted(BASE64_SPECIAL_CHARACTERS) : "DISABLED",
-        BASE64_DEFAULTTABLE[63] == '_' ? "WebSafe" : "Standard",
+        base64_b64Table()[63] == '_' ? "WebSafe" : "Standard",
         BASE64_REVERSED_ORDER ?"ENABLED":"DISABLED",
         BASE64_WITH_LINEBREAKS?"ENABLED":"DISABLED",
         BASE64_BUFFER_SIZE
@@ -130,11 +130,6 @@ int USAGE(base64)
 b64State EncoderState = {
     false, true, NULL, {0}
 };
-
-//bool _isTableInitialized = false;
-//bool _isExternCall = true;
-//const char* CodeTable;
-//char _codeTableBuffer[66];
 
 const char* base64defaultTable = {
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="

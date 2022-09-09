@@ -713,8 +713,8 @@ cmLn rawNext( cmOp option )
 }
 
 // hasOption('f') returns true if cmdLine containes tagged
-// parameter --f-barfoo, just switch -f, modus --foo as well on
-// --foo-bar (uncommon but valid, would be modus 'foo-bar')
+// parameter --f-barfoo, just switch -f, modus --foobar as well on
+// --f-foobar (uncommon but valid, would be modus 'foobar')
 cmBl hasOption( cmOp option )
      { return 1 + indexOf(option); }
 
@@ -722,19 +722,29 @@ cmBl hasOption( cmOp option )
 // if 'name' is tagged by same letter it's beginning with
 //     --foo as well as --f-foo would be treated being modus 'foo'.
 cmOp isModus( cmLn name )
-     { return name[0] == c.running->options[indexOfName(name)]; }
+{
+    int idx = indexOfName( name );
+    return idx >= 0 && idx < c.running->numgum
+         ? name[0] == c.running->options[idx]
+         : false;
+}
 
 // The 'name' parameter supports resolving wildcards (*'s), so:
 //     --f-fooBar as well --fooBong would be treated being modus foo*
-//     --flup as well as --f-flump would be treated being modus flu*
+//     --flup and as well --f-flump would be treated being modus flu*
 cmOp isAnyModus( cmLn wild )
-     { return wild[0] == c.running->options[indexOfFirst(wild)]; }
+{
+    int idx = indexOfFirst( wild );
+    return idx >= 0 && idx < c.running->numgum
+         ? wild[0] == c.running->options[idx]
+         : false;
+}
 
 // are any token bound to option letters matching their first character?
 cmBl isAnyModusAtAll( void )
 {
     int modi=0;
-    for(int i=0;i<c.running->numgum;i++) {
+    for( int i=0; i<c.running->numgum; ++i ) {
         modi += c.running->options[i] == c.running->names[i][0];
     } return modi;
 }
@@ -769,16 +779,16 @@ int idxOfModusNumber( int number )
     } return c.running->numgum;
 }
 
-// returns name of that modus positioned at (one-based)
-// modus-index 'number' (name of the n'th modus given)
+// return the modus at modus-(one-based)-index 'number'
+// (the n'th modus given - not index of tokken at all!)
 cmLn getModusByNumber( uint number )
 {
     if (!number) return NoString;
     return c.running->names[ idxOfModusNumber(number) ];
 }
 
-// get the number of a named modus given (counterpart to
-// getModusByNumber() which by number gets a modex 'name'
+// get the n'th modus given (counterpart to getModusNumber()
+// but the otherway round
 int getNumberOfModus( cmLn mode ) {
     int modex=0;
     for(int i=0;i<c.running->numgum;++i) {
@@ -801,7 +811,7 @@ cmBl hasModus( cmLn modus, cmLn parameter )
         if ( member > indexOf( group ) ) {
             int modex = getNumberOfModus( modus );
             DEBUGFMT("modex is %i",modex)
-            return isAnyModusAtAll() >  modex
+            return isAnyModusAtAll() > modex
                  ? member < idxOfModusNumber( modex + 1 )
                  : true;
         }
@@ -1203,24 +1213,34 @@ char* toPrintList( char* list )
     return list;
 }
 
-/*
 #ifdef __TINYC__
 #define SCRIPT_DEBUG DEBUG
 #else
 #define SCRIPT_DEBUG 0
 #endif
-*/
 void* getDingens( const char* named )
 {
+    #if SCRIPT_DEBUG
+    printf( "%s(): looking for a '%s' dingens\n", __FUNCTION__, named);
+    #endif
     ulong get = Dingens( named );
     if ( c.running->dingens ) {
         Ding* dings = c.running->dingens;
         do{
+            #if SCRIPT_DEBUG
+            printf( "%s(): trying das da: %s\n", __FUNCTION__, Maskens( dings->dasda ) );
+            #endif
             if( dings->dasda == get ) {
+                #if SCRIPT_DEBUG
+                printf( "%s(): found it :)\n", __FUNCTION__ );
+                #endif
                 return dings->bumms;
             }
         } while( dings = dings->dings );
     }
+    #if SCRIPT_DEBUG
+    printf( "%s(): NOT found the %s :(\n", __FUNCTION__, Maskens(get) );
+    #endif
     return NULL;
 }
 
@@ -1276,7 +1296,7 @@ void addDingens( const char* named, void* dingens, void(*bumms)(void) )
     dings->which = bumms;
 }
 
-//#undef SCRIPT_DEBUG
+#undef SCRIPT_DEBUG
 
 #else
 #undef NOT_COMPILE_FILE

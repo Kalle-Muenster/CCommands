@@ -64,7 +64,7 @@
 #endif
 
 
-#if defined( EXPORT_COMMANDLINER_LIBRARIES ) && defined( EXPORT_COMMANDLINER_API )
+#if defined( EXPORT_COMMANDLINER_LIBRARIES ) && defined( EXPORT_COMMANDLINER )
 #define COMMANDLINER_API __declspec(dllexport)
 #else
 #define COMMANDLINER_API
