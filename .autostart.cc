@@ -17,7 +17,7 @@
     --add <name> <command> : registers given <command> below given <name> to be executed every system start\n\
     --nxt <command>        : registers given <command> to get executed with the next system start (only once)\n\
     --lst                  : lists all entries which before had been registered via 'autostart --add' call\n\
-    --rem <name>           : unregister that command which before was been registered below givin <name>\n\n\
+    --rem <name>           : unregister that command which before has been registered below givin <name>\n\n\
     (*mode parameter may be given by shorter one leter form '-a, -n, -l, -r' also )\n\n");
     return CheckForError()
         || !hasOption('h');

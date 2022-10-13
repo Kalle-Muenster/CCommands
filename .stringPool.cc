@@ -20,7 +20,7 @@
 #endif
 
 static struct WhirlVars pool_protopool_vars = {
-     EMPTY, EMPTY, 0, NULL, NULL, NULL,
+     EMPTY, EMPTY, 0, 0, NULL, NULL, NULL
 };
 StringPool* whirlVar( StringPool* poolBottom )
 {
@@ -35,8 +35,8 @@ StringPool* whirlVar( StringPool* poolBottom )
 #endif
 #define prefix(name,plus) name ## plus
 static StringPool prefix( Pool, Instance) = { { 0 },{ 0 },{ 0 },
-    EMPTY, EMPTY, 0, &prefix( Pool, Instance ),
-    (char*)&prefix(Pool,Instance).Cyc[0], 0
+    EMPTY, EMPTY, 0, 0, &prefix( Pool, Instance ),
+    (char*)&prefix(Pool,Instance).Cyc[0], NULL
 };
 static StringPool* Pool = &prefix(Pool,Instance);
 #ifndef INTERNAL_POOLBOTTOM
@@ -98,7 +98,7 @@ StringPool* POOL_VOIDCALL( InitializeCycle )
         pool->Ovr = 0;
         pool->Chk = 0;
         const int SLICESIZE = (CYCLE_SIZE / CYCLE_COUNT);
-        for( int i=0; i<CYCLE_COUNT; i++ ) {
+        for( int i=0; i<CYCLE_COUNT; ++i ) {
             pool->Cyc[ pool->Pos[i] = (i*SLICESIZE) ] = 0;
         } pool->running = inst;
     } pool_setBottom( pool );
@@ -177,6 +177,7 @@ int POOL_VOIDCALL( slicesSinceCheckpoint )
 
 int POOL_VOIDCALL( byteSinceCheckpoint )
 {
+    if (!pool->Cnt) return -1;
     if (!inst->Pls) return *pool->Chk; // + (pool->Cnt-1);
     StringPool* next = pool;
     uint bytes = *pool->Chk;
@@ -202,7 +203,7 @@ StringPool* POOL_VOIDCALL( push )
     pool_(InitializeCycle)(inst);
     pool->Chk = &pool->Pos[0];
     pool->running = t;
-    inst->Pls++;
+    ++inst->Pls;
     return pool;
 }
 
@@ -217,7 +218,7 @@ StringPool* POOL_VOIDCALL( pop )
         inst->running->Cur = NULL;
         free( inst->running );
         inst->running = t;
-        inst->Pls--;
+        --inst->Pls;
     } return inst->running;
 }
 
@@ -288,12 +289,19 @@ uint* POOL_FUNCTION( ensure, uint straitLength )
     } else if ( plan > straitLength ) {
         pool->Pos[0] = pool->Cut[0] = pool->Ovr = 0;
         pool->Cnt = pool->Cnt ? 1 : 0;
+        pool->Num = 0;
     } return &pool->Pos[0];
 }
 
 int POOL_VOIDCALL( overlap )
 {
     return pool->Ovr;
+}
+
+uint* POOL_VOIDCALL( startCounter )
+{
+    pool->Num = 0;
+    return &pool->Num;
 }
 
 #ifndef NO_CHECKPOINT_MODE
@@ -331,11 +339,11 @@ uint   _writeCStringPool( StringPool* inst, const byte* src )
 uint   _writeDataToCycle( StringPool* inst, const byte* src, uint cbSize )
 {
     uint overstep=0;
-    for( uint i=0; i<=cbSize; i++ ) {
+    for( uint i=0; i<=cbSize; ++i ) {
         pool->Cyc [ ( pool->Pos[0] != CYCLE_SIZE )
             ? ++pool->Pos[0]
             : pool->Pos[0] + ++overstep
-        ] = i==cbSize?0:*(src++);
+        ] = i == cbSize ? 0 : *(src++);
     } return overstep;
 }
 
@@ -343,11 +351,11 @@ uint   _writeDataToCycle( StringPool* inst, const byte* src, uint cbSize )
 uint   _writeCharToCycle( StringPool* inst, byte c, uint count )
 {
     uint overstep=0;
-    for( uint i=0; i<=count; i++ ) {
+    for( uint i=0; i<=count; ++i ) {
         pool->Cyc [ ( pool->Pos[0] != CYCLE_SIZE )
             ? ++pool->Pos[0]
             : pool->Pos[0] + ++overstep
-        ] = i==count?0:c;
+        ] = i == count ? 0 : c;
     } return overstep;
 }
 
@@ -356,15 +364,15 @@ uint   _writeCharToCycle( StringPool* inst, byte c, uint count )
 byte*  _writePoolSlice( StringPool* inst, ptval ptData, int cbSize )
 {
     if( ptData < 256u ) {
-        if( (!ptData) && cbSize==EMPTY ) return 0;//(byte*)ptData;
+        if( (!ptData) && cbSize==EMPTY ) return 0;
         pool->Cut[0] = (byte)ptData;
     } else {
         pool->Cut[0] = *(const byte*)ptData;
     } const byte* src = (const byte*)ptData;
-    for(uint i=CYCLE_COUNT-1; i>0; i--) {
+    for(uint i=CYCLE_COUNT-1; i>0; --i) {
         pool->Pos[i]=pool->Pos[i-1];
         pool->Cut[i]=pool->Cut[i-1];
-    } pool->Pos[0]--;
+    } --pool->Pos[0];
     pool->Ovr = cbSize == EMPTY
               ? writeCStringPool(src)
               : ptData < 256u
@@ -372,9 +380,10 @@ byte*  _writePoolSlice( StringPool* inst, ptval ptData, int cbSize )
               : writeDataToCycle(src,cbSize);
     if(pool->Pos[0]== CYCLE_SIZE)
        pool->Pos[0] = 0;
+     ++pool->Num;
 #ifndef NO_CHECKPOINT_MODE
     if(pool->Cnt) {
-       pool->Cnt++; // when bottom is in 'checkpoint' mode
+     ++pool->Cnt; // when bottom is in 'checkpoint' mode
         if( pool->Ovr ) {
             pool->Cur = (char*)&pool->Cyc[0];
            #if DEBUG>0
@@ -403,7 +412,7 @@ byte*  _writePoolSlice( StringPool* inst, ptval ptData, int cbSize )
 
 char* POOL_FUNCTION( sets, const char* name )
 {
-    return (char*)writePoolSlice((ptval)(void*)name,EMPTY);
+    return (char*)writePoolSlice( (ptval)(void*)name, EMPTY );
 }
 
 byte* POOL_FUNCTION2P( setb, void* data, uint cbSize )
@@ -411,9 +420,9 @@ byte* POOL_FUNCTION2P( setb, void* data, uint cbSize )
     return writePoolSlice( (ptval)data, cbSize );
 }
 
-uint* POOL_FUNCTION( seti, uint data )
+byte* POOL_FUNCTION( set4, uint data )
 {
-    return (uint*)writePoolSlice( (ptval)(void*)&data, sizeof(uint) );
+    return writePoolSlice( (ptval)(void*)&data, 4 );
 }
 
 char* POOL_FUNCTION2P( setc, char c, uint count )
@@ -423,12 +432,12 @@ char* POOL_FUNCTION2P( setc, char c, uint count )
 
 char* POOL_FUNCTION( set, const char* name )
 {
-    return (char*)writePoolSlice((ptval)(void*)name,EMPTY);
+    return (char*)writePoolSlice( (ptval)(void*)name, EMPTY );
 }
 
-char* POOL_FUNCTION( set8, ulong data )
+byte* POOL_FUNCTION( set8, ulong data )
 {
-    return (char*)writePoolSlice((ptval)(void*)&data,8);
+    return writePoolSlice( (ptval)(void*)&data, 8 );
 }
 
 char* POOL_FUNCTION2P( setf, const char* fmt, const char* src )
@@ -447,10 +456,10 @@ char* POOL_FUNCTION2P( setf, const char* fmt, const char* src )
     return pool->Cur;
 }
 
-char* POOL_FUNCTION2P( setfi, const char*fmt, int src )
+char* POOL_FUNCTION2P( setfi, const char*fmt, slong src )
 {
    #if defined(__TINYC__)
-    char buffer[strlen(fmt)+16];
+    char buffer[strlen(fmt)+32];
     sprintf(&buffer[0],fmt,src);
     pool_set(&buffer[0]);
    #else
@@ -463,8 +472,25 @@ char* POOL_FUNCTION2P( setfi, const char*fmt, int src )
     return pool->Cur;
 }
 
+char* POOL_FUNCTION2P( setfl, const char*fmt, double src )
+{
+#if defined(__TINYC__)
+    char buffer[strlen(fmt) + 32];
+    sprintf(&buffer[0], fmt, src);
+    pool_set(&buffer[0]);
+#else
+    uint bufLen = (uint)(strlen(fmt) + 32);
+    char* buffer = (char*)malloc(bufLen);
+    sprintf(buffer, fmt, src);
+    pool_set(buffer);
+    free(buffer);
+#endif
+    return pool->Cur;
+}
+
 char* POOL_VOIDCALL( get )
 {
+    *pool->Cur = pool->Cut[0];
     return pool->Cur;
 }
 
@@ -481,8 +507,8 @@ Slice POOL_VOIDCALL( slic )
 char* POOL_FUNCTION( last, int pos )
 {
     if( CYCLE_COUNT > pos ) {
-        for( int i = 1; i <= pos; ++i )
-            pool->Cyc[pool->Pos[i]] = '\0';
+        //for( int i = 1; i < pos; ++i )
+        pool->Cyc[pool->Pos[pos-1]] = '\0';
     } pos %= CYCLE_COUNT;
     pool->Cyc[pool->Pos[pos]] = pool->Cut[pos];
     return (char*)&pool->Cyc[pool->Pos[pos]];
@@ -507,7 +533,7 @@ Slice POOL_FUNCTION( slices, int count )
     for( int i = 1; i <= count; ++i )
         pool->Cyc[pool->Pos[i]] = pool->Cut[i];
     pool->Cur = (char*)&pool->Cyc[pool->Pos[count]];
-    pool->Cnt = 0;
+    pool->Num = pool->Cnt = 0;
     Slice slce = { (byte)pool->Cut[count],
         (uint)(pool->Pos[count - 1] - pool->Pos[count]),
         (ptval)pool->Cur, &slice_toString,
@@ -518,11 +544,11 @@ Slice POOL_FUNCTION( slices, int count )
 char* POOL_FUNCTION( merge, int count )
 {
     count %= CYCLE_COUNT;
-    for( int i=1; i<=count; ++i )
+    int cutter = count == 0 ? CYCLE_COUNT-1 : count;
+    for( int i=1; i<=cutter; ++i )
         pool->Cyc[ pool->Pos[i] ] = pool->Cut[i];
-    pool->Cnt = 0;
-    return pool->Cur
-         = (char*)&pool->Cyc[pool->Pos[count]];
+    pool->Num = pool->Cnt = 0;
+    return pool->Cur = (char*)&pool->Cyc[pool->Pos[count]];
 }
 
 #ifndef NO_CHECKPOINT_MODE
@@ -534,7 +560,7 @@ char* POOL_VOIDCALL( collectCheckpoint )
     while( pushed = ( (current->running->Cnt >= 1)
                     && current != inst) ) {
         current = current->running;
-        wasLooping++;
+        ++wasLooping;
     } if ( wasLooping ) {
        #if DEBUG>0
         printf( "%s(): cycle was pushed %i times!\n",
@@ -548,7 +574,7 @@ char* POOL_VOIDCALL( collectCheckpoint )
             printf( "%s(): fished %i strings out from the pool\n",
                   __FUNCTION__, current->Cnt-1 );
            #endif
-            if( (--current->Cnt) <= CYCLE_COUNT )
+            if( (--current->Cnt) < CYCLE_COUNT )
                 return pool_merge( current->Cnt );
             else
                 return (char*)&current->Cyc[current->Cnt = 0];

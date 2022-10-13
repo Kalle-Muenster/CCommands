@@ -61,7 +61,7 @@ int  commandLineArgs( int count, char** argv );
 
 
 #if !WINDOWS
-void DestructCommander_ALTERNATIVE(int rStat, void *arg)
+void DestructCommander_ALTERNATIVE( int rStat, void *arg )
      { DEBUGFMT("return state %i",rStat) printf("\n"); DestructCommander(); }
 #define atexit(func) on_exit( func ## _ALTERNATIVE, &c.running->CommanderError[0] )
 #endif
@@ -259,14 +259,14 @@ int PopCommandLine( bool collectErrors )
             do {
 #ifdef using_junkYard
                 if ( dings->dasda == *(uint*)"junk" ) {
-                    Junk* junkyard = (Junk*)dings->bumms;
+                    Junk* junkyard = (Junk*)dings->point;
                     junkyard->drop( junkyard );
                     free( junkyard );
                 } else
 #endif
 #ifdef using_stringPool
                 if ( dings->dasda == *(uint*)"pool" )
-                    dings->bumms = NULL;
+                    dings->point = NULL;
 #endif
                 ; // ansonsten nich else
                 dings = dingens->dings;
@@ -359,14 +359,20 @@ int commandLineArgs( int count, char** argv )
         c.running->executor[c.running->endOfThePath] = c.running->executor[c.running->endOfThePath]!='\\'
                                                      ? c.running->executor[c.running->endOfThePath]
                                                      : '/';
+    c.running->namestateOfCommander = &c.running->executor[c.running->endOfThePath];
+    int nlength = c.running->endOfThePath;
+    while (c.running->executor[--c.running->endOfThePath] != '/') {
+        if (c.running->namestateOfCommander == &c.running->executor[nlength]) {
+            if (c.running->executor[c.running->endOfThePath] == '.')
+                c.running->namestateOfCommander = &c.running->executor[c.running->endOfThePath];
+        } if (c.running->endOfThePath == 0) break;
+    }
+    c.running->stateOfTheCommander = c.running->endOfThePath
+        ? &c.running->executor[c.running->endOfThePath]
+        : &c.running->executor[0] - 1;
 
-    c.running->namestateOfCommander = &c.running->executor[c.running->endOfThePath-2];
-    do{ --c.running->endOfThePath;
-    } while( c.running->executor[c.running->endOfThePath] != '/' && c.running->endOfThePath >= 0 );
-    c.running->stateOfTheCommander = &c.running->executor[c.running->endOfThePath];
-
-    for(int i = 0;i<COMMANDER_BUFFER;i++)
-        c.running->buffer[i]=17;
+    for(int i = 0; i< COMMANDER_BUFFER; ++i)
+        c.running->buffer[i] = 17;
     c.running->buffer[COMMANDER_BUFFER - 1] = '\0';
     c.running->numgum=0;
     c.running->numopt=0;
@@ -437,7 +443,7 @@ int commandLineArgs( int count, char** argv )
                         return 0;
                     c.running->names[c.running->numgum][0] = '\0';
                     c.running->options[c.running->numgum] = 'v';
-                    if(beginPersistChange(LOCAL)) {
+                    if( beginPersistChange(LOCAL) ) {
                         char* fcc = current+3;
                         if( (i+1==count) && (FourCC(fcc)==FourCC("DEBU"))) {
                             setPersistEntry((current+3),"(1)");
@@ -469,13 +475,9 @@ int commandLineArgs( int count, char** argv )
          #else
                     ERROR_CODE(c.running)=ERROR_NO_FEATURES;
          #endif
-                // } else if (current[2]==' ') {
-                    // printf("XXXXXXXXXXXXXXXXXXXX doubledash!!!\n");
-                    // parameterCopy( c.running->names[c.running->numgum], DOUBLEDASHED_OUT );
-                    // c.running->types[c.running->numgum++] = 'R';
                 } else {
                     c.running->options[c.running->numgum]=current[2];
-                    if(argv[i][3]=='-') {
+                    if( argv[i][3] == '-' ) {
                         parameterCopy( c.running->names[c.running->numgum],
                                        checkForSpaces( current+4 ) );
                         c.running->types[c.running->numgum] = 'N';
@@ -576,12 +578,12 @@ int rawNum(void)
 }
 
 // gets positional index of the argument tagged by 'option'
-int indexOf(cmOp option)
+int indexOf( cmOp option )
 {
     int i = c.running->numgum+1;
-    while((i--)>0)
-        if(option == c.running->options[i])
-            return i;
+    while( i-->0 )
+        if( option == c.running->options[i] )
+            break;
     return i;
 }
 
@@ -589,7 +591,7 @@ int indexOf(cmOp option)
 // or -1 if 'name' doesn't exist.
 int indexOfName( cmLn name )
 {
-    for(int i=0;i<c.running->numgum;i++)
+    for( int i=0; i<c.running->numgum; ++i )
         if( !stringCompare( name, c.running->names[i] ) )
             return i;
     return -1;
@@ -598,14 +600,14 @@ int indexOfName( cmLn name )
 // could match or -1 if wildcard doesn't match nowhere.
 int indexOfFirst( cmLn part )
 {
-    if(*part) {
-        char* p=(char*)part;
+    if( *part ) {
+        char* p= (char*)part;
         do{ if( *p++ == '*' )break;
             } while(*p);
-        if(--p == part)
+        if( --p == part )
             part++;
-        else if(*p=='*')
-           *p--='\0';
+        else if( *p == '*' )
+           *p-- = '\0';
 
         if( part <= p ) {
          // means part was ending on '*'
@@ -621,33 +623,35 @@ int indexOfFirst( cmLn part )
             char rvrs[MAX_NAM_LEN];
             char trap[MAX_NAM_LEN];
             char* cur = (char*)(part + len);
-            char* rev = &trap[0]-1;
+            char* rev = &trap[0] - 1;
             while( *++rev = *--cur );
-            for(int i=0;i<c.running->numgum;i++) {
-                rev = &rvrs[0]-1;
+            for( int i=0; i < c.running->numgum; ++i ) {
+                rev = &rvrs[0] - 1;
                 cur = &c.running->names[i][0]
-                    + strlen(&c.running->names[i][0]);
+                    + strlen( &c.running->names[i][0] );
                 while( *++rev = *--cur );
-                if(strcmp(&trap[0],&rvrs[0])>=len)
+                if( strcmp( &trap[0], &rvrs[0] ) >= len )
                     return i;
             }
         }
     }
+#if DEBUG
     printf( "%s(): returns: -1\n", __FUNCTION__ );
+#endif
     return -1;
 }
 
-cmOp byIndexTheOption(int index)
+cmOp byIndexTheOption( int index )
  {
     if( index < MAX_NUM_GUM && index >= 0 ) {
         return c.running->options[index];
     } else {
-        setErrorText("index out of range");
+        setErrorText( "index out of range" );
         return '\0';
     }
 }
 
-cmLn getNameByIndex(int index)
+cmLn getNameByIndex( int index )
 {
     return index < 0 || index > MAX_NUM_GUM
          ? NoString : c.running->names[index];
@@ -664,8 +668,8 @@ cmLn getName( cmOp option )
 cmLn rawName( int number )
 {
     int currentSearch = number;
-    for(int i=0;i<c.running->numgum;i++){
-        if(!isTagged(c.running->names[i])) {
+    for( int i=0; i<c.running->numgum; ++i ){
+        if( !isTagged(c.running->names[i]) ) {
             if(!(--number)) {
                 lastRawquested = currentSearch;
                 return c.running->names[i];
@@ -799,10 +803,9 @@ int getNumberOfModus( cmLn mode ) {
     } return 0;
 }
 
-// is there <parameter> (*wildcard allowed) given
-// between <modus> and the next modus or (if <modus>
-// may be the last modus given) between <modus> and
-// the end of the command line
+// is between <modus> and the next modus after <modus>
+// (or end of the the command line if <modus> is lsst)
+// a parameter (*wildcard allowed) named <parameter> ?
 cmBl hasModus( cmLn modus, cmLn parameter )
 {
     cmOp group = isAnyModus( modus );
@@ -1096,7 +1099,7 @@ void DestructCommander( void )
 {
     setCleansening();
   #if DEBUG
-    printf( "%s(): begin cleansening!\n", (cmLn)__FUNCTION__ );
+    printf( "%s(): begin cleansening!\n", __FUNCTION__ );
   #endif
 #if defined( using_environMentor )
     FeatureGet autocommit = getFeatured( "ENVIRONMENTOR_AUTO_COMMIT" );
@@ -1112,13 +1115,13 @@ void DestructCommander( void )
     while( c.running->dingens ) {
         Ding* weg = c.running->dingens;
         ulong dingsbumsId = weg->dasda;
-        if( weg->which ) weg->which();
-        weg->bumms = 0;
+        if( weg->bumms ) weg->bumms();
+        weg->point = 0;
         c.running->dingens = weg->dings;
         free( weg );
         #if DEBUG
         printf( "%s(): %s dingens removed\n",
-                (cmLn)__FUNCTION__, (cmLn)&dingsbumsId );
+                __FUNCTION__, (cmLn)&dingsbumsId );
         #endif
     }
   #if DEBUG
@@ -1213,34 +1216,17 @@ char* toPrintList( char* list )
     return list;
 }
 
-#ifdef __TINYC__
-#define SCRIPT_DEBUG DEBUG
-#else
-#define SCRIPT_DEBUG 0
-#endif
 void* getDingens( const char* named )
 {
-    #if SCRIPT_DEBUG
-    printf( "%s(): looking for a '%s' dingens\n", __FUNCTION__, named);
-    #endif
     ulong get = Dingens( named );
     if ( c.running->dingens ) {
         Ding* dings = c.running->dingens;
         do{
-            #if SCRIPT_DEBUG
-            printf( "%s(): trying das da: %s\n", __FUNCTION__, Maskens( dings->dasda ) );
-            #endif
             if( dings->dasda == get ) {
-                #if SCRIPT_DEBUG
-                printf( "%s(): found it :)\n", __FUNCTION__ );
-                #endif
-                return dings->bumms;
+                return dings->point;
             }
         } while( dings = dings->dings );
     }
-    #if SCRIPT_DEBUG
-    printf( "%s(): NOT found the %s :(\n", __FUNCTION__, Maskens(get) );
-    #endif
     return NULL;
 }
 
@@ -1253,14 +1239,14 @@ void remDingens( const char* named )
     DEBUGLOG( named )
     cmDn get = Dingens( named );
     if ( c.running->dingens ) {
-        Ding  baseDings;
+        Ding baseDings;
         baseDings.dings = c.running->dingens;
         Ding* base = &baseDings;
         while (base->dings) {
            if (base->dings->dasda == get) {
                base->dings = base->dings->dings;
                break;
-            } base = base->dings;
+           } base = base->dings;
         }
     }
 }
@@ -1292,8 +1278,8 @@ void addDingens( const char* named, void* dingens, void(*bumms)(void) )
                 dings = das->dings; break;
             } else das = das->dings;
         }
-    } dings->bumms = dingens;
-    dings->which = bumms;
+    } dings->point = dingens;
+    dings->bumms = bumms;
 }
 
 #undef SCRIPT_DEBUG

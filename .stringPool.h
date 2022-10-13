@@ -116,6 +116,7 @@ typedef struct STRINGPOOL_API WhirlVars {
     uint        Pls;
     uint        Cnt;
     uint        Ovr;
+    uint        Num;
     StringPool* running;
     char*       Cur;
     uint*       Chk;
@@ -131,6 +132,7 @@ struct {
     uint    Pls;
     uint    Cnt;
     uint    Ovr;
+    uint    Num;
     StringPool* running;
     char*   Cur;
     uint*   Chk; };
@@ -166,7 +168,7 @@ typedef StringPool STRINGPOOL_API POOL;
 #define POOL_FUNCTION(fnam,prms) pool_(fnam)( StringPool* inst, prms )
 #define POOL_FUNCTION2P(fnam,arg1,arg2) pool_(fnam)( StringPool* inst, arg1, arg2 )
 #define POOL_CREATE_BOTTOM(bottom) static StringPool bottom ## Instance = { \
-            {0}, {0}, {0}, EMPTY, EMPTY, 0, &bottom ## Instance, (char*)&bottom ## Instance.Cyc[0], 0 \
+            {0}, {0}, {0}, EMPTY, EMPTY, 0, 0, &bottom ## Instance, (char*)&bottom ## Instance.Cyc[0], NULL \
         }; static StringPool* bottom = pool_InitializeCycle_ex( whirlVar( &bottom ## Instance ) )
 #define pool_scope  POOL* Pool = pool_getBottom();
 
@@ -226,8 +228,12 @@ byte*   POOL_FUNCTION2P( setb, void* data, uint cbSize );
 #define pool_setb(ptDat,cbLen) pool_(setb)(Pool,ptDat,cbLen)
 
 // write 4byte (sizeof(uint)) binary 'data' into the pool
-uint*   POOL_FUNCTION( seti, uint data );
-#define pool_seti(uiDat) pool_(seti)(Pool,uiDat)
+byte*   POOL_FUNCTION( set4, uint fourbyte );
+#define pool_set4(uiDat) pool_(set4)(Pool,uiDat)
+
+// write 8byte (sizeof(ulong)) binary 'data' into the pool
+byte*   POOL_FUNCTION( set8, ulong aightbyte );
+#define pool_set8(ullDat) pool_(set8)(Pool,ullDat)
 
 // write char 'c' 'count' times into the pool (e.g. like 'fill')
 char*   POOL_FUNCTION2P( setc, char c, uint count );
@@ -238,24 +244,24 @@ char*   POOL_FUNCTION2P( setf, const char* fmt, const char* src );
 #define pool_setf(strFmt,strSrc) pool_(setf)(Pool,strFmt,strSrc)
 
 // write int 'num' (formated by 'fmt') into the pool
-char*   POOL_FUNCTION2P( setfi, const char* fmt, int num );
+char*   POOL_FUNCTION2P( setfi, const char* fmt, slong num );
 #define pool_setfi(strFmt,intSrc) pool_(setfi)(Pool,strFmt,intSrc)
 
-// write 64bit of data (8byte), passed by value, into the pool
-char*   POOL_FUNCTION( set8, ulong acht );
-#define pool_set8(acht) pool_(set8)(Pool,acht)
+// write float 'num' (formated by 'fmt') into the pool
+char*   POOL_FUNCTION2P(setfl, const char* fmt, double num );
+#define pool_setfl(strFmt,floatSrc) pool_(setfl)(Pool,strFmt,floatSrc)
 
 // Check if a 'sizeplan' could match without
 // passing the point of no return at least.
 // returns: 'positive value': count on bytes
-//          left 'best before' point of no return.
+//          'best before' point of no return.
 // returns: 'negative value': count on bytes
-//          the sizeplan would push beyond
+//          the sizeplan would write beyond
 //          the cycle's point of no return.
-//          generates commander error: 'overlap'
-// returns: 'false': The sizeplan would exceed
+//        generates commander error: 'overlap'
+// returns: 'false/null': The sizeplan would exceed
 //          even a whole CYCLE_SIZE-ed chunk.
-//          generates commander error: 'buffer'
+//        generates commander error: 'buffer'
 int     POOL_FUNCTION(sizePlan,int planedsize);
 #define pool_sizePlan(planedsize) pool_(sizePlan)(Pool,planedsize)
 
@@ -266,20 +272,20 @@ int     POOL_FUNCTION(sizePlan,int planedsize);
 // commander error 'buffer').
 // - If YES: returns a pointer to the offset
 // to the pool buffer's actual write position
-// used for startingpoint of the data which
+// used as starting point for the data which
 // is planed to be written. (the offset is
 // initially 0, but will raise with count on
-// bytes written till pointer was obtained)
+// bytes written via following pool_set() calls
 uint*   POOL_FUNCTION(ensure,uint planedsize);
 #define pool_ensure(size) pool_(ensure)(Pool,size)
 
-// check if last operation has caused an overlap
-// return true if last operation caused cycling
+// Check if last operation has caused an overlap.
+// Returns true if last operation caused cycling
 // over the 'Point of no return' mark. which means
 // that the pool currently is in a state where
 // actually NO data yet was over written, but where
-// the next operation WILL overwrites or takes mem
-// which before at some point was in use allready
+// the next operation WILL overwrite data which
+// before already was in use (and still could be)
 int     POOL_VOIDCALL(overlap);
 #define pool_overlap() pool_(overlap)(Pool)
 
@@ -312,18 +318,24 @@ char*   POOL_FUNCTION(merge,int);
 // pointers which strictly depend on propper termination
 // and may fail when working on strings which not
 // strictly are ordered 'strait forward' accessible.
-Slice POOL_FUNCTION(slices,int);
+Slice   POOL_FUNCTION(slices,int);
 #define pool_slices(merget) pool_(slices)(Pool,merget)
 #define slice_get(poolslice) poolslice.dsc(&poolslice)
 #define slcPt_get(sliceptr) sliceptr->dsc(sliceptr)
 #define slice_len(poolslice) poolslice.len
 #define slcPt_len(sliceptr) sliceptr->len
 
+// Retreive a pointer to a counter variable which
+// increases with each pool_set() call that follows
+uint*   POOL_VOIDCALL(startCounter);
+#define pool_startCounter() pool_(startCounter)(Pool)
+
 #ifndef NO_CHECKPOINT_MODE
 // Set the cycle into 'checkpoint' mode.
 // As soon a checkpoint is set, it will
 // not 'cycle' anymore, but will push a
-// new pool each time it's reaching end.
+// new pool (or increase pool size) each
+// time it's reaching pools actual end.
 // when 'collectCheckpoint()' is called
 // for collecting any chunks pushed in
 // between, it switches back to recycle
@@ -345,8 +357,8 @@ uint*   POOL_VOIDCALL(setCheckpoint);
 // each call then pops current pool and restores
 // previous one,. when all allocated pools are
 // collected and have been poped again it returns
-// NULL then and switches back it's behavior to
-// recycling the actually stated pool instance
+// NULL then and switches back it's behavior where
+// one actual stated pool instance gets recycled
 char*   POOL_VOIDCALL(collectCheckpoint);
 #define pool_collectCheckpoint() pool_(collectCheckpoint)(Pool)
 #endif

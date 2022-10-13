@@ -21,26 +21,6 @@ const byte WrapperCode[] = { "\
 #endif\n\n\
 int main(int argc,char**argv)\n{\
 " };
-const byte RelativeTargets[] = { "\
-\n    const char* localpath = argv[0];\
-\n    int containsPath = 0;\
-\n    while( *++localpath ) {\
-\n        if ( *localpath == '/' || *localpath == '\\\\' )\
-\n            containsPath = 1;\
-\n    } if ( containsPath ) {\
-\n        while( *--localpath )\
-\n            if ( *localpath == '/' || *localpath == '\\\\' ) {\
-\n                containsPath = 1+(int)( (char*)localpath - (char*)argv[0] );\
-\n                localpath = argv[0];\
-\n        break; }\
-\n    } cmdLength += containsPath;\
-^SNIPPED.DATANAME^\
-\n    char* data = command;\
-\n    while ( containsPath-- )\
-\n        *data++ = *localpath++;\
-\n    *data = '\\0';\
-\n    strcat(command,\"^SNIPPED.WRAPPEDLINE^\");\
-"};
 const byte SynchronWrapper[] = { "\
 \n    int cmdLength = ^SNIPPED.DATASIZE^ + argc;\
 \n    for(int i=1;i<argc;i++)\
@@ -64,7 +44,7 @@ const byte WrapperClose[] = { "\
 
 void createWrapperHead( char* outputDir )
 {
-    char buffer[128]={'\0'};
+    char buffer[MAX_NAM_LEN]={'\0'};
     strcpy(Tokken[EXTENSION],".h");
     sprintf( &buffer[0],"%s.%s%s", outputDir,
              Tokken[COMMANDNAME], Tokken[EXTENSION] );
@@ -73,19 +53,20 @@ void createWrapperHead( char* outputDir )
 
 void createWrapperCode( char* outputDir, char insertSnippet )
 {
-    char buffer[128]={'\0'};
+    char buffer[MAX_NAM_LEN]={'\0'};
     strcpy( Tokken[EXTENSION], ".cc" );
     sprintf( &buffer[0],"%s.%s%s", outputDir,
              Tokken[COMMANDNAME], Tokken[EXTENSION] );
+	const byte* selected = hasOption('A')
+	                     ? &AsynchronWrapper[0]
+                         : &SynchronWrapper[0];
     generateFileConditionalInsert( &WrapperCode[0], &WrapperClose[0],
-                  hasOption('A') ? &AsynchronWrapper[0]
-                                 : &SynchronWrapper[0],
-                                   SNIPPED, &buffer[0] );
+                                   selected, SNIPPED, &buffer[0] );
 }
 
 void createWrapperCall( char* outputDir )
 {
-    char buffer[128]={'\0'};
+    char buffer[MAX_NAM_LEN]={'\0'};
     strcpy( Tokken[EXTENSION], ".c" );
     sprintf( &buffer[0],"%s%s%s", outputDir,
              Tokken[COMMANDNAME], Tokken[EXTENSION] );
@@ -103,14 +84,9 @@ void InitWrapGenerator(void)
                 "\n    char* command = (char*)malloc(cmdLength); *command = '\\0';"
             );
             const char* checkWrappedLine = getName('l');
-            if ( checkWrappedLine[0] == '/' || checkWrappedLine[1] == ':'
-              || checkWrappedLine[2] == ':' || checkWrappedLine[3] == ':' ) {
-                assignTokken( Snipped.Tokken, EXAMPLECODE,
-                    "^SNIPPED.DATANAME^\n    strcat(command,\"^SNIPPED.WRAPPEDLINE^\");"
-                );
-            } else {
-                Snipped.Tokken[EXAMPLECODE] = &RelativeTargets[0];
-            }
+            assignTokken( Snipped.Tokken, EXAMPLECODE,
+                "^SNIPPED.DATANAME^\n    strcat(command,\"^SNIPPED.WRAPPEDLINE^\");"
+            );
             int Async = isModus("Async");
 			// spawning processes via exec / spawn / process functions, 
 			// on windows, does not (other then a system() call would do)

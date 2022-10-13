@@ -102,8 +102,8 @@ const char* bitField_uintToString( uint val )
     pool_ensure( 32 );
     for( int i = 3; i >= 0; --i ) {
         text.data = bitField_byteToString( (val>>(i*8)) & 0x000000ffu );
-        pool_seti( text.ints[0] );
-        pool_seti( text.ints[1] );
+        pool_set4( text.ints[0] );
+        pool_set4( text.ints[1] );
     } return pool_merge( 8 );
 }
 

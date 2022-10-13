@@ -72,6 +72,7 @@ extern "C" {
     } CRYPS64;
 
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
+#include <.tokken.h>
 #include <crypt64.h>
 #else
 
@@ -90,6 +91,7 @@ extern "C" {
    CRYPS64_API int      crypt64_canStream( K64F* stream );
    CRYPS64_API void     crypt64_flush( K64F* stream );
    CRYPS64_API void     crypt64_close( K64F* stream );
+   CRYPS64_API ptval    crypt64_sizeof( K64F* stream );
 
    CRYPS64_API K64* crypt64_allocateNewKey(void);
    CRYPS64_API K64* crypt64_initializeKey(K64* key,ulong value);
@@ -99,7 +101,7 @@ extern "C" {
    CRYPS64_API ulong crypt64_calculateHashValue( const byte* data, int size );
    CRYPS64_API void crypt64_invalidateKey(K64* key);
    CRYPS64_API int  crypt64_isValidKey(K64* key);
-   
+
    CRYPS64_API int  crypt64_prepareContext( K64* key, byte mod );
    CRYPS64_API int  crypt64_releaseContext( K64* key );
    CRYPS64_API bool crypt64_setContext(K64* key, byte mod);

@@ -115,6 +115,26 @@ static b64Frame read_end_enc(void* stream)
     else return nullFrame;
 }
 
+static b64Frame peak_nxt_dec( void* stream )
+{
+	b64Frame   frme = { EncoderState.CodeTable[0]
+                      | EncoderState.CodeTable[0] << 8
+					  | EncoderState.CodeTable[0] << 16
+					  | EncoderState.CodeTable[0] << 24 };
+	FILE*      file = (FILE*)((b64Stream*)stream)->dat;
+	const long peak = -fread( &frme, 1, 4, file );
+	fseek( file, peak, SEEK_CUR );
+	return base64_decodeFrame( frme );
+}
+
+static b64Frame peak_nxt_enc( void* stream )
+{
+	b64Frame   frme;
+	FILE*      file = (FILE*)((b64Stream*)stream)->dat;
+	const long peak = -fread( &frme, 1, 3, file );
+	fseek( file, peak, SEEK_CUR );
+	return base64_encodeFrame( frme );
+}
 
 static b64Frame write_nxt_dec( void* frame )
 {
@@ -125,7 +145,6 @@ static b64Frame write_nxt_enc( void* frame )
 {
     return base64_encodeFrame( *(b64Frame*)frame );
 }
-
 
 static int file_write_set( b64Stream* strm, b64Frame frame )
 {
@@ -407,18 +426,23 @@ int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned 
                 }
             } stream->pos = 0;
         } else {
-            stream->dat = fopen( file, &Mode[1] );
+			int wbmode = Mode[1]=='w' && Mode[2]=='b';
+            stream->dat = wbmode
+			            ? fopen( file, "rb+" )
+						: fopen( file, &Mode[1] );
+			if (wbmode && stream->dat == NULL)
+				stream->dat = fopen( file, "wb+" );
             if (stream->dat) {
                 FILE* f = (FILE*)stream->dat;
                 stream->flg[2] = FILESTREAM;
-                if (Mode[1] == 'r') {
+                if( Mode[1] == 'r' ) {
 #ifdef _MSC_VER
                     char   dummy[64];
                     char*  buf;
                     char** ptA = &buf;
                     char** ptB = (char**)&dummy;
                     int*   ptC = NULL;
-                    _get_stream_buffer_pointers(f, &ptA, &ptB, &ptC);
+                    _get_stream_buffer_pointers( f, &ptA, &ptB, &ptC );
                     stream->get = Mode[0] == 'e'
                                 ? &file_get_enc
                                 : &file_get_dec;
@@ -443,7 +467,7 @@ int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned 
                     char** ptA = NULL;
                     char** ptB = (char**)&dummy;
                     int*   ptC = NULL;
-                    _get_stream_buffer_pointers(f, &ptA, &ptB, &ptC);
+                    _get_stream_buffer_pointers( f, &ptA, &ptB, &ptC );
                     stream->len = (ptval)ptC;
                     stream->pos = (ptval)ptB[0];
                     stream->buf = (ptval)(b64Frame*)ptA[0];
@@ -455,10 +479,13 @@ int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned 
                                 ? &write_nxt_enc
                                 : &write_nxt_dec;
                     stream->set = &file_write_set;
+					stream->get = Mode[0] == 'e'
+					            ? &peak_nxt_dec
+								: &peak_nxt_enc;
                 }
             } else {
-                tempf("bad file: '%s'", file);
-                setErrorText(getTemp());
+                tempf( "bad file: '%s'", file );
+                setErrorText( getTemp() );
             }
         }
     } return !wasError();
@@ -512,6 +539,14 @@ uint base64_swrite( const byte* src, uint elm_siz, uint elm_cnt, b64Stream* stre
 b64Frame base64_getFrame( b64Stream* stream )
 {
     return stream->nxt( stream );
+}
+
+// gets one single frame (3 byte when encoding,
+// or 4 byte when decoding) from a 'w' streams
+// current write position - next frame over written
+b64Frame base64_peakWrite( b64Stream* stream )
+{
+	return *stream->get( stream );
 }
 
 // puts one single frame (3 byte when encoding,

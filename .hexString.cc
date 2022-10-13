@@ -90,7 +90,7 @@ char* hexString_toNum( const char* hex )
     ulong* data = (ulong*)malloc(kurz*sizeof(ulong));
 #endif
     pool_setCheckpoint();
-	hexString_toBin( hex, &lang, &data[0], kurz*16 );
+	hexString_toBin( hex, (uint*)&lang, (byte*)&data[0], kurz*16 );
 	do { --kurz;
 		pool_setfi( "%llu", data[kurz] );
 	} while( kurz );
@@ -109,7 +109,7 @@ char* hexString_fromNum( const char* num )
 	    while( *nam == ' ' ) ++gum; 
 	    if( gum ) { 
 			valum = atol( num );
-			int out = hexString_toHex(&valum,8,&wumm[0],16);
+			int out = hexString_toHex((byte*)&valum,8u,&wumm[0],16u);
 			wumm[out]='\0';
 			pool_set( &wumm[0] ); gam = 0;
 			num = nam; 
@@ -118,7 +118,7 @@ char* hexString_fromNum( const char* num )
 	} if( gam ) {
 		valum = atol( num );
 		char wumm[32];
-		wumm[hexString_toHex(&valum,8,&wumm[0],16)]='\0';
+		wumm[hexString_toHex((byte*)&valum,8u,&wumm[0],16u)]='\0';
 		pool_set( &wumm[0] );
 	} return pool_collectCheckpoint();
 }
@@ -139,7 +139,7 @@ uint hexString_toHex(const byte* srcBin, uint srcLen, char* dstHex, uint dstLen)
 uint hexString_toBin(const char* srcHex, uint* srcLen, byte* dstBin, uint dstLen)
 {
     int srcLength = srcLen? *srcLen : strlen(srcHex);
-    int i = -1; int c = 0;
+    int i = -1; uint c = 0;
     int n = 0; char oneByte[2];
     while( (++i<srcLength) && (c<dstLen) ) {
         if( (oneByte[n]=hexhex[(byte)srcHex[i]]) >= 0 )
@@ -154,10 +154,10 @@ uint hexString_toBin(const char* srcHex, uint* srcLen, byte* dstBin, uint dstLen
 
 char* hexString_int64ToHex(ulong dat) {
 #ifdef using_commandLiner
-	hexString_toHex(&dat,8,getTemp(),16);
+	hexString_toHex((byte*)&dat,8u,getTemp(),16u);
 	return getTemp();
 #else
-	hexString_toHex(&dat,8,pool_setc(0,16),16);
+	hexString_toHex((byte*)&dat,8u,pool_setc(0,16),16u);
 	return pool_get();
 #endif
 }
@@ -170,17 +170,17 @@ ulong hexString_hexToInt64(const char* sixteen) {
 
 char* hexString_int32ToHex(uint dat) {
 #ifdef using_commandLiner
-	hexString_toHex(&dat,4,getTemp(),8);
+	hexString_toHex((byte*)&dat,4u,getTemp(),8u);
 	return getTemp();
 #else
-	hexString_toHex(&dat,4,pool_setc(0,8),8);
+	hexString_toHex((byte*)&dat,4u,pool_setc(0,8),8u);
 	return pool_get();
 #endif
 }
 
 uint hexString_hexToInt32(const char* aight) {
 	ulong data; uint len=8;
-	hexString_toBin(aight,&len,&data,4);
+	hexString_toBin(aight,&len,(byte*)&data,4u);
 	return (uint)data;
 }
 

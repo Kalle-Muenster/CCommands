@@ -31,9 +31,6 @@ yard* junk_setYard( yard* junkyard )
 #if defined( using_commandLiner ) && defined( WITH_JUNKYARD ) && (!defined( CLINE_INTERNAL ))
     if ( junkyard ) {
         if ( !junk_yard ) {
-      #if DEBUG
-            printf( "setting up commandLiner dingens for attaching JunkYard instance\n" );
-      #endif
             addDingens( "junk", (junk_yard=junkyard), &junk_dropYard );
         }
     } else if ( junk_yard ) {
@@ -81,9 +78,6 @@ void dropZone( void* chunk )
     Junk* next = (Junk*)This->next;
     This->next = NULL;
     if( next ) {
-      #if DEBUG
-        printf( "%s(): next piece: %p\n", __FUNCTION__, next );
-      #endif
          // next->drop = &dropZone;
         // next->drop( next );
        // drop is recursive..., for regular cases it should be a
@@ -126,7 +120,7 @@ void dropZone( void* chunk )
   #if DEBUG
     if ( next ) {
         junk_removed = junk_counter;
-        printf("%s(): found chunk number %i was last chunk %p\n",__FUNCTION__, junk_counter, This );
+        printf("%s(): found chunk number %i seem to be last chunk %p\n",__FUNCTION__, junk_counter, This );
     }
   #endif
 }
@@ -281,7 +275,7 @@ void* junk_objectivateMemory( cmDtFunc objDtor, void* objMem )
 {
 #if DEBUG
     yard_allocateJustOnlyJunk( objMem )->dtor = objDtor;
-    printf( "%s(): chunk of unknown sized 'alien' data as a new object at address %p\n", __FUNCTION__, objMem );
+    printf( "%s(): unknown sized 'alien' object at address %p\n", __FUNCTION__, objMem );
     return objMem;
 #endif
     yard_allocateJustOnlyJunk( objMem )->dtor = objDtor;

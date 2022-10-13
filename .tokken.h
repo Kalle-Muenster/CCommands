@@ -16,7 +16,9 @@
 #if defined(__TINYC__)
 #include <.environMentor.h>
 #else
-#include <.commandLiner.h>
+#ifndef COMMANDLINER_ESCENTIALS_DEFINED
+#include "./eszentielle/.CommandLinerTypes.h"
+#endif
 #endif
 
 #if defined( EXPORT_COMMANDLINER_LIBRARIES ) && defined( EXPORT_TOKKEN_API )
@@ -51,9 +53,9 @@ extern "C"{
 #include <tokken.h>
 #else
 
-    TOKKEN_API tokken_Generator tokken_define( const char* grouping, tokken_CharSet mode );
-    TOKKEN_API const char*      tokken_create( const tokken_Generator* mode );
-	#define                     tokken_Create( tokenerator ) tokdef->create( tokenerator )
+    TOKKEN_API tokken_Generator* tokken_define( tokken_CharSet forMode, int size, const char* groupString );
+    TOKKEN_API const char*       tokken_create( const tokken_Generator* mode );
+	#define                      tokken_Create( tokenerator ) tokenerator->create( tokenerator )
 
 #endif
 

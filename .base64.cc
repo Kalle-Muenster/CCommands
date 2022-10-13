@@ -765,7 +765,7 @@ const char* base64_encode( const byte* data, uint* size )
         *size = 0; return NoString;
     }
     uint outsiz = BASE64_ENCODED_SIZE( *size );
-    char* outdat = pool_sizePlan( outsiz ) > 0 
+    char* outdat = pool_sizePlan( outsiz ) > 0
                  ? (char*)pool_setc( '\0', outsiz )
                  : (char*)junk_allocateJunkChunk( outsiz );
     *size = base64_encodeData( outdat, data, *size, 0 );
@@ -776,7 +776,7 @@ const byte* base64_decode( const char* data, uint* ptSize )
 {
     uint size = ptSize ? *ptSize : (uint)strlen(data);
     if( !ptSize ) { ptSize = &size; }
- 
+
     uint outsiz = (size > 0 && size < EMPTY)
                 ? BASE64_DECODED_SIZE( size )
                 : BASE64_DECODED_SIZE( strlen(data) );
@@ -1020,9 +1020,9 @@ int main(int argc,char** argv)
     if( search('f') ) {
         base64_toggleReverseByteorder( getName('f') );
     }
-	if( search('w') ) {
-		base64_toggleDefaultTable( getName('w') );
-	}
+    if( search('w') ) {
+        base64_toggleDefaultTable( getName('w') );
+    }
     if( hasOption('r') ) {
         printf( "Resetting table and white list...\n" );
         beginPersistChange( LOCAL );

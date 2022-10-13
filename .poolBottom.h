@@ -11,11 +11,12 @@
 #undef pool_set
 #undef pool_sets
 #undef pool_setb
-#undef pool_seti
+#undef pool_set4
 #undef pool_set8
 #undef pool_setc
 #undef pool_setf
 #undef pool_setfi
+#undef pool_setfl
 #undef pool_sizePlan
 #undef pool_ensure
 #undef pool_overlap
@@ -25,6 +26,7 @@
 #undef pool_slic
 #undef pool_slice
 #undef pool_slices
+#undef pool_startCounter
 #undef pool_setCheckpoint
 #undef pool_collectCheckpoint
 #undef pool_cleanupCheckpoint
@@ -58,11 +60,12 @@
 #define pool_set(srcstr) pool_(set)(BOTTOM,srcstr)
 #define pool_sets(srcstr) pool_(sets)(BOTTOM,srcstr)
 #define pool_setb(ptDat,cbLen) pool_(setb)(BOTTOM,ptDat,cbLen)
-#define pool_seti(uiDat) pool_(seti)(BOTTOM,uiDat)
+#define pool_set4(uiDat) pool_(seti)(BOTTOM,uiDat)
 #define pool_set8(longi) pool_(set8)(BOTTOM,longi)
 #define pool_setc(bChar,cbLen) pool_(setc)(BOTTOM,bChar,cbLen)
 #define pool_setf(strFmt,strSrc) pool_(setf)(BOTTOM,strFmt,strSrc)
 #define pool_setfi(strFmt,intSrc) pool_(setfi)(BOTTOM,strFmt,intSrc)
+#define pool_setfl(strFmt,fltSrc) pool_(setfl)(BOTTOM,strFmt,fltSrc)
 #define pool_sizePlan(planedsize) pool_(sizePlan)(BOTTOM,planedsize)
 #define pool_ensure(size) pool_(ensure)(BOTTOM,size)
 #define pool_overlap() pool_(overlap)(BOTTOM)
@@ -72,6 +75,7 @@
 #define pool_slic() pool_(slic)(BOTTOM)
 #define pool_slice(atpos) pool_(slice)(BOTTOM,atpos)
 #define pool_slices(merget) pool_(slices)(BOTTOM,merget)
+#define pool_startCounter() pool_(startCounter)(BOTTOM)
 #define pool_setCheckpoint() pool_(setCheckpoint)(BOTTOM)
 #define pool_collectCheckpoint() pool_(collectCheckpoint)(BOTTOM)
 #define pool_cleanupCheckpoint() pool_(cleanupCheckpoint)(BOTTOM)

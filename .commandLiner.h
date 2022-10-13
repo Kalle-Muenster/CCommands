@@ -86,8 +86,8 @@ typedef struct COMMANDLINER_API Ding Ding;
 typedef struct COMMANDLINER_API Ding {
     ulong dasda;
     Ding* dings;
-    void* bumms;
-    void(*which)(void);
+    void* point;
+    void(*bumms)(void);
 } Ding;
 
 #define NoString getNoString()
@@ -148,34 +148,34 @@ COMMANDLINER_API cmOp    isSwitch(cmOp option);
 COMMANDLINER_API cmOp    isTagged(cmLn name);
 
 // handling 'modus' parameters (access via modus names)
-COMMANDLINER_API cmOp    isModus(cmLn name);
-COMMANDLINER_API cmOp    isAnyModus(cmLn wildcard);
-COMMANDLINER_API cmBl    isAnyModusAtAll(void);
-COMMANDLINER_API cmBl    isAnyOtherModusThen(cmLn);
-COMMANDLINER_API cmLn    getModus(cmOp ofOption);
+COMMANDLINER_API cmOp    isModus( cmLn name );
+COMMANDLINER_API cmOp    isAnyModus( cmLn wildcard );
+COMMANDLINER_API cmBl    isAnyOtherModusThen( cmLn thisModus );
+COMMANDLINER_API cmBl    isAnyModusAtAll( void );
+COMMANDLINER_API cmLn    getModus( cmOp ofOption );
 COMMANDLINER_API cmLn    getModusByNumber( uint number );
 COMMANDLINER_API int     getNumberOfModus( cmLn mode );
 COMMANDLINER_API int     idxOfModusNumber( int number );
-COMMANDLINER_API cmBl    hasModus(cmLn modus,cmLn name);
+COMMANDLINER_API cmBl    hasModus( cmLn modus, cmLn thisName );
 
 // handling 'index' parameters (for access via index numbers)
-COMMANDLINER_API cmIx    indexOf(cmOp option);
-COMMANDLINER_API cmIx    indexOfName(cmLn name);
-COMMANDLINER_API cmIx    indexOfFirst(cmLn part);
-COMMANDLINER_API cmLn    getNameByIndex(cmIx index);
-COMMANDLINER_API cmOp    byIndexTheOption(cmIx index);
-COMMANDLINER_API cmLn    getName(cmOp option);
+COMMANDLINER_API cmIx    indexOf( cmOp option );
+COMMANDLINER_API cmIx    indexOfName( cmLn name );
+COMMANDLINER_API cmIx    indexOfFirst( cmLn part );
+COMMANDLINER_API cmLn    getNameByIndex( cmIx index );
+COMMANDLINER_API cmOp    byIndexTheOption( cmIx index );
+COMMANDLINER_API cmLn    getName( cmOp option );
 
 // raw parameters (wich are neither modus nor tagged)
-COMMANDLINER_API cmLn    rawNext(cmOp option);
-COMMANDLINER_API cmLn    nextRaw(void);
-COMMANDLINER_API cmLn    rawName(int number);
+COMMANDLINER_API cmLn    rawNext( cmOp option );
+COMMANDLINER_API cmLn    nextRaw( void );
+COMMANDLINER_API cmLn    rawName( int number );
 
-COMMANDLINER_API cmIx    rawNum(void);
-COMMANDLINER_API cmIx    optNum(void);
-COMMANDLINER_API cmIx    numGum(void);
+COMMANDLINER_API cmIx    rawNum(void); // count on undashed, untagged parameters
+COMMANDLINER_API cmIx    optNum(void); // count on option letter tagged parameters   
+COMMANDLINER_API cmIx    numGum(void); // count on tokken at all: optNum() + rawNum()
 
-COMMANDLINER_API // parameter validity and error handling
+// parameter validity and error handling
 COMMANDLINER_API cmBl    isValidArg(cmLn);
 COMMANDLINER_API cmBl    isEmptyArg(cmLn);
 COMMANDLINER_API cmBl    wasError(void);
@@ -190,11 +190,11 @@ COMMANDLINER_API void    clearAllErrors(void);
 COMMANDLINER_API cmBl    CheckForError(void);
 COMMANDLINER_API void    ExitOnError(const char*);
 
-// 'path' to the file which contains main()
+// 'path' to the file which contains main() (or path to executable if not c-script but compiled code instead)
 COMMANDLINER_API cmLn    getCommander(void);
 // 'path' to the folder which contains that file which contains main()
 COMMANDLINER_API cmLn    getPathOfTheCommander(void);
-// 'name' of that file which contains main()
+// 'name' of that file which contains main() (without full path)
 COMMANDLINER_API cmLn    getNameOfTheCommander(void);
 // decide if 'Commander' path/name functions should return filename
 // with or without file extention (in most cases extension is .c)
@@ -216,8 +216,17 @@ COMMANDLINER_API cmLn    unQuoted(cmLn);
 COMMANDLINER_API cmLn    toQuoted(cmLn);
 COMMANDLINER_API cmBl    isQuoted(cmLn);
 
+// get a named 'dingens' from the commander which has 
+// previously been attatached via addDingens() function 
 COMMANDLINER_API void*   getDingens( const char* named );
+// add a 'dingens' to the commander which later can be 
+// retrieved at any time again via calling getDingens()
+// a 'dingens' can be anything thats pointed by a void*
+// when process ends, commander disposes all dingenses
+// properly if still some dingenses are attached maybe.
 COMMANDLINER_API void    addDingens( const char* named, void* dings, void(*bumms)(void) );
+// remove a named dingens from the commander which previously
+// was attached to the commander by calling addDingens() 
 COMMANDLINER_API void    remDingens( const char* named );
 
 // convert the given, either ':', ';', ',', '\n' or ' '
@@ -226,7 +235,7 @@ COMMANDLINER_API char*   toPrintList(char* list);
 
 // split a string at contained 'fromSep' chars
 // to a list of 'toSep' separated substrings by
-// returning count on contained string elements
+// returning count on so created split part elements
 COMMANDLINER_API uint    toSplitList(char* sepList, char* fromTo);
 
 COMMANDLINER_API void    DestructCommander(void);

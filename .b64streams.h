@@ -146,8 +146,11 @@ BASE64_API void        base64_destream( B64S* );
 // like getch() but reads b64Frames instead of chars
 BASE64_API b64Frame    base64_getFrame( B64S* );
 
- // like putch() but writes b64Frames (either 3/4 bytes) instead of chars
+// like putch() but writes b64Frames (either 3/4 bytes) instead of chars
 BASE64_API int         base64_putFrame( B64S*, b64Frame );
+
+// peaks the next frame which will be 'overwritten' in a wb+/rb+ stream  
+BASE64_API b64Frame    base64_peakWrite( B64S* );
 
 // read data from b64Stream into buffer 'dst' while either de or en-coding the stream
 BASE64_API uint        base64_sread( byte* dst, uint size, uint count, B64S* );

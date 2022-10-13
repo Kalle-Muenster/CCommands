@@ -276,7 +276,7 @@ int USAGE(fs)
    -*    -  only lists FILES (...but only these which got extension. )\n\
    -p    -  output always full path, even if entries are in cwd\n\
    --cpy -<FOLDER>  -  rather then just outputting list of found matches to stdout,\n\
-                    also copy all these found items to destination target <FOLDER>");
+                    also copy all these founds to destination <FOLDER>");
     return CheckForError()
         || !hasOption('h');
 }

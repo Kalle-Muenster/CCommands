@@ -9,10 +9,12 @@
   #include ".crypt64.h"
   #include ".commandLiner.h"
   #include ".junkYard.h"
+  #include ".hash64.h"
 #else
 #ifndef BASE64_ENABLE_STREAMING_API
 #define BASE64_ENABLE_STREAMING_API
 #endif
+ // #include ".hash64.h"
  #include ".base64.h"
  #define WITH_JUNKYARD
  #include ".commandLiner.h"
@@ -48,12 +50,11 @@
 #endif
 
 /* TODO's:
-    add possibility to use rotating keys during de/en cryption. so each frame will be crypted differently effected due to this rotation
-    add possibility of wider range of key variations by extending the relaying base64 source script so 255 different digits may be used
-       in cryption tables (e.g still 64 different digits per table are used then, but these 64 can be chosen by different keys individualy
-       from a set 255 different available digits)
-    make possible restricting pass phrases to being only valid if containing a mandatory count on 'wrong' entered characters. - like the
-        like these password must contain:
+    1. add possibility to use a rotating cryption table during de/en cryption. so each frame will be crypted by a different key, in relation to its possition in the encrypted data  differently effected due to this rotation
+          - actual rotation shift for individual frames when seeking inside cryptic data stream can be evaluated via modulo (frameposition % shiftlength) then 
+		 
+    2. make possible restricting pass phrases to being only valid if containing a mandatory count on 'wrong' entered characters. - some rules like this:
+        password must contain:
             at least 1 alphabetical character
             at least 1 numerical didgit character
             at least 1 special character
@@ -61,12 +62,12 @@
             (would lead to a maybe confusing behavior when seting up a password.... the second 'verify password' field then must be entered
             differently then the first 'set password' field - divergency between these varients of the password then is mandatorey errorlevel
             for entering valid passwords later)
-        so, entering passords correctly always would be invalid then. only inputs where validation returns some distinct, mandatory errorlevel would
+        so, entering passwords correctly always would be invalid then. only inputs where validation returns some distinct, mandatory errorlevel would
         be treated 'valid' password for granting entrance then.
         this then introduces possibillity for "password always MUST be enterd differently then as like it was entered last time before" like rules...
         if entered same wrong character at same position, two times after another - the second time it won't be valid anymore. (could greatly
         increase security regarding automated attacks where algorythms trying to find valid entry by iterating random numbers... - because
-        a password found by an algorythm like such, turns invalid within same moment the algorythinm finds it...
+        a password found by an algorythm like such, turns invalid within same moment the algorythinm finds entry via that password...
 
 */
 // flg[1] stream type '?'  (check: 0x3F == 0x2E identifies a Non-Crypted FILE
@@ -489,6 +490,7 @@ uint crypt64_encryptFile( K64* key, const char* srcFile, const char* dstFile )
         data.i8[0] = '=';
         size += fwrite( &data.i8[0], 1, 1, dst );
         fflush(dst); fclose(dst);
+        base64_destream( src );
 
     crypt64_releaseContext( key ); }
     return (uint)size;
@@ -656,7 +658,7 @@ k64Chunk crypt64_encryptFrame( K64* key64, k64Chunk threeByte )
 k64Chunk crypt64_decryptFrame( K64* key64, k64Chunk fourChars )
 {
     if( CurrentContext == key64->pass.value ) {
-        key64->table;
+        EncoderState.CodeTable = key64->table;
         return base64_decodeFrame( fourChars );
     } else setError( "context", CONTXT_ERROR );
     return base64_Nuller();
@@ -894,7 +896,7 @@ uint crypt64_sread( byte* dst, uint size, uint count, K64F* cryps )
                 EncoderState.CodeTable = cryps->dec;
                 data = base64_decodeFrame( data );
                 asFrame(dst) = data;
-                dst += 3; 
+                dst += 3;
                 if ( data.u8[3] == 0 ) siz += 3;
                 else break;
             } while( dst < end );
@@ -1000,19 +1002,28 @@ b64Frame crypt64_getYps( K64F* vonDa )
 {
     if( CurrentContext == vonDa->key->pass.value ) {
         b64Frame yps = {0};
-        yps = erstmal_noch_der_header( yps, vonDa );
-        int bin = vonDa->key->b64cc[3].i8[1] == BINARY;
-        if( yps.u32 && yps.u32 != FourCC("plop") ) {
-            if (bin) { EncoderState.CodeTable = vonDa->dec;
-                return base64_decodeFrame( yps );
-            } return yps;
-        } else { // if header received completely:
-            if( bin ) { EncoderState.CodeTable = vonDa->enc;
-                yps = base64_getFrame( (b64Stream*)&vonDa->b64 );
-                        EncoderState.CodeTable = vonDa->dec;
-                return base64_decodeFrame( yps );
-            } EncoderState.CodeTable = vonDa->key->table;
-            return base64_getFrame( (b64Stream*)&vonDa->b64 );
+		int bin = vonDa->key->b64cc[3].i8[1] == BINARY;
+		int out = vonDa->b64.flg[1] != OUTPUT;
+		int chk	= out;	
+		if( chk ) {
+			yps = erstmal_noch_der_header( yps, vonDa );
+			if( yps.u32 && yps.u32 != FourCC("plop") ) {
+				if( bin ) { EncoderState.CodeTable = vonDa->dec;
+					return base64_decodeFrame( yps );
+				} return yps;
+			} else chk = false;
+        } 
+		if( !chk ){ // if header received completely or if is OUTPUT stream:
+            if( bin ) { 
+				EncoderState.CodeTable = vonDa->enc;
+				yps = out ? base64_peakWrite( (b64Stream*)&vonDa->b64 )
+				          : base64_getFrame( (b64Stream*)&vonDa->b64 );
+				EncoderState.CodeTable = vonDa->dec;
+				return base64_decodeFrame( yps );
+            } else {
+				EncoderState.CodeTable = vonDa->key->table;
+				return base64_getFrame( (b64Stream*)&vonDa->b64 );
+			}
         }
     } setError( "context", CONTXT_ERROR );
     return base64_Nuller();
@@ -1066,6 +1077,11 @@ void crypt64_close( K64F* stream )
 {
     cleansenCrypstream( stream );
     junk_drop( stream );
+}
+
+ptval crypt64_sizeof( K64F* stream )
+{
+	return stream->b64.len;
 }
 
 void crypt64_Initialize( bool init )

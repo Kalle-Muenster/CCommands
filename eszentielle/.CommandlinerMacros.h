@@ -70,25 +70,23 @@
 #define USAGE(commandName) show_ ## commandName ## _usage()
 #define DOKU(commandName) DocumentationFor_ ## commandName
 
-#define CreateDoku(command,dokumentation) const char* \
-    DocumentationFor_ ## command = { dokumentation }
+#define CreateDoku(commandname,dokumentation) const char* \
+    DocumentationFor_ ## commandname = { dokumentation }
 
 #define Synopsis(parameterUsage) printf( \
     "\nUsage:\n\n  %s %s\n\n", \
     getNameOfTheCommander(), \
     parameterUsage \
 )
-#define UsageDefinition(command,synopsis) int \
-show_ ## command ## _usage() { \
-    if(hasOption('v')) showOptions(); \
-    Synopsis(synopsis); \
-    printf( DocumentationFor_ ## command ); \
+#define UsageDefinition( command, synopsis ) \
+int show_ ## command ## _usage() { \
+    Synopsis( synopsis ); \
+    printf( "Options:\n\n%s\n\n", DocumentationFor_ ## command ); \
     return (CheckForError()||(!hasOption('h'))); \
 }
 
 #define ERROR_CODE(comState) (*(int*)&comState->CommanderError[0])
 #define ERROR_NAME(comState) (&comState->CommanderError[4])
 #define COMMANDER_BUFFER ((MAX_NUM_GUM+1)*MAX_NAM_LEN+1)
-
 
 #endif
