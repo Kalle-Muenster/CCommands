@@ -7,16 +7,19 @@
 \*\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\*/
 #ifdef _OnTheFly_
  #include ".environMentor.h"
+ StringPool* Base16Pool = NULL;
+ #define PREPARE_POOLBOTTOM Base16Pool
+ #include ".poolBottom.h"
 #else
  #include ".CheckForProjectSettings.h"
  #include ".hexString.h"
-#endif
-
 #ifndef  CYCLE_SIZE
  #define CYCLE_SIZE (2048)
+ #include ".stringPool.h"
+ StringPool* Pool = NULL;
+#endif
 #endif
 
-#include ".stringPool.h"
 
 #ifdef _OnTheFly_
 #include ".commandLiner.h"
@@ -51,6 +54,8 @@ int USAGE(hexString)
  #endif
 #endif
 
+#include ".byteOrder.h"
+
 #define SLICE_SIZE (CYCLE_SIZE/CYCLE_COUNT)
 
 const char xehxeh[16] = {
@@ -58,7 +63,7 @@ const char xehxeh[16] = {
 #if (defined(HEXSTRING_UPPERCASE) && (!defined(HEXSTRING_LOWERCASE)))
     '8','9','A','B','C','D','E','F'
 #else
-	'8','9','a','b','c','d','e','f'
+    '8','9','a','b','c','d','e','f'
 #endif
 };
 
@@ -82,117 +87,130 @@ const char hexhex[128] = {
 
 char* hexString_toNum( const char* hex )
 {
-	uint lang = strlen(hex);
-	uint kurz = (lang/16)+1;
-#if defined(__TINYC__)
-	ulong data[kurz];
-#else
-    ulong* data = (ulong*)malloc(kurz*sizeof(ulong));
-#endif
-    pool_setCheckpoint();
-	hexString_toBin( hex, (uint*)&lang, (byte*)&data[0], kurz*16 );
-	do { --kurz;
-		pool_setfi( "%llu", data[kurz] );
-	} while( kurz );
-#if !defined(__TINYC__)
-    free(data);
-#endif
-	return pool_collectCheckpoint();
+    uint len = strlen(hex);
+    ulong numval = 0;
+    while( *hex == '0' ) {
+        if( *++hex == '\0' ) {
+            return pool_set( len > 8 ? "00000000000000000000" : "0000000000" );
+        }
+    } len = strlen(hex);
+
+    if( len > 16 ) {
+        return setError( "wordsize", FourCC("bits") );
+    } else if ( len == 16 ) {
+        int i = 0;
+        while( i < 16 ) {
+            char upper = (char)toupper( hex[i] );
+            if( upper == 'F' ) ++i;
+            else if( upper < 'F' ) break;
+            else return setError( "wordsize", FourCC("bits") );
+        }
+    }
+    uint size = len / 2;
+    size += size;
+    hexString_toBin( hex, &size, (byte*)&numval, size/2 );
+    const char* fmtstr = ( numval > UINT32_MAX ) ? "%llu" : "%u";
+    return pool_setfi( fmtstr, numval );
 }
 
 char* hexString_fromNum( const char* num )
 {
-	char wumm[32]; ulong valum = 0;
-	int gum=0; pool_setCheckpoint();
-	const char* nam = num; int gam = gum;
-	while( *++nam ) { ++gam;
-	    while( *nam == ' ' ) ++gum; 
-	    if( gum ) { 
-			valum = atol( num );
-			int out = hexString_toHex((byte*)&valum,8u,&wumm[0],16u);
-			wumm[out]='\0';
-			pool_set( &wumm[0] ); gam = 0;
-			num = nam; 
-			gum = gam;
-		}
-	} if( gam ) {
-		valum = atol( num );
-		char wumm[32];
-		wumm[hexString_toHex((byte*)&valum,8u,&wumm[0],16u)]='\0';
-		pool_set( &wumm[0] );
-	} return pool_collectCheckpoint();
+    uint len = strlen( num );
+    ulong numval = 0;
+    while( *num == '0' ) {
+        if( *++num == '\0' ) {
+            return pool_set( len > 10 ? "0000000000000000" : "00000000" );
+        }
+    } len = strlen( num );
+
+    if( len > 20 ) {
+        return setError( "wordsize", FourCC("bits") );
+    } else if ( len == 20 ) {
+        const char* maxstr = "18446744073709551615";
+        int i = 0;
+        while( i < 20 ) {
+            if( num[i] == maxstr[i] ) ++i;
+            else if( num[i] < maxstr[i] ) break;
+            else return setError( "wordsize", FourCC("bits") );
+        }
+    }
+    sscanf( num, "%llu", &numval );
+    uint size = (numval <= UINT32_MAX) ? 4u : 8u;
+    char buff[32];
+    buff[ hexString_toHex( (byte*)&numval, size, &buff[0], size*2 ) ] = '\0';
+    return pool_set( &buff[0] );
 }
 
 //------------- convert data from binary to base16 and vice verse ------------//
 
-uint hexString_toHex(const byte* srcBin, uint srcLen, char* dstHex, uint dstLen)
+uint hexString_toHex( const byte* srcBin, uint srcLen, char* dstHex, uint dstLen )
 {
-    uint end = (dstLen/2)+(dstLen%2);
+    int end = (dstLen/2) + (dstLen%2);
     end = srcLen < end ? srcLen : end;
-    for (uint i=0, I=0; i < end; i++, I+=2 ) {
+    for( int i=0, I=(end*2)-2; i < end; ++i, I-=2 ) {
         dstHex[I]   = xehxeh[srcBin[i]/16];
         dstHex[I+1] = xehxeh[srcBin[i]%16];
-    } dstHex[end+=end] = '\0';
+    } dstHex[ end+=end ] = '\0';
     return end;
 }
 
-uint hexString_toBin(const char* srcHex, uint* srcLen, byte* dstBin, uint dstLen)
+uint hexString_toBin( const char* srcHex, uint* srcLen, byte* dstBin, uint dstLen )
 {
     int srcLength = srcLen? *srcLen : strlen(srcHex);
-    int i = -1; uint c = 0;
+    int i = srcLength; uint c = 0;
     int n = 0; char oneByte[2];
-    while( (++i<srcLength) && (c<dstLen) ) {
+    while( (--i >= 0 ) && (c < dstLen) ) {
         if( (oneByte[n]=hexhex[(byte)srcHex[i]]) >= 0 )
             if(++n==2)
-                dstBin[c++] = oneByte[n=0]*0x10
-                            + oneByte[1];
+                dstBin[c++] = oneByte[n=0]
+                            + oneByte[1]*0x10;
     } if(srcLen)
-        *srcLen = i;
+        *srcLen = (srcLength - i)-1;
     return c;
 }
 
 
-char* hexString_int64ToHex(ulong dat) {
+char* hexString_int64ToHex( ulong dat ) {
 #ifdef using_commandLiner
-	hexString_toHex((byte*)&dat,8u,getTemp(),16u);
-	return getTemp();
+    hexString_toHex( (byte*)&dat, 8u, getTemp(), 16u );
+    return getTemp();
 #else
-	hexString_toHex((byte*)&dat,8u,pool_setc(0,16),16u);
-	return pool_get();
+    hexString_toHex( (byte*)&dat, 8u, pool_setc(0,16), 16u );
+    return pool_get();
 #endif
 }
 
-ulong hexString_hexToInt64(const char* sixteen) {
-	char data[9]; uint len=16;
-	hexString_toBin(sixteen,&len,&data[0],8);
-	return *(ulong*)&data[0];
+ulong hexString_hexToInt64( const char* sixteen ) {
+    char data[9]; uint len=16;
+    hexString_toBin( sixteen, &len, &data[0], 8u );
+    return *(ulong*)&data[0];
 }
 
-char* hexString_int32ToHex(uint dat) {
+char* hexString_int32ToHex( uint dat ) {
 #ifdef using_commandLiner
-	hexString_toHex((byte*)&dat,4u,getTemp(),8u);
-	return getTemp();
+    hexString_toHex( (byte*)&dat, 4u, getTemp(), 8u );
+    return getTemp();
 #else
-	hexString_toHex((byte*)&dat,4u,pool_setc(0,8),8u);
-	return pool_get();
+    hexString_toHex( (byte*)&dat, 4u, pool_setc(0,8), 8u );
+    return pool_get();
 #endif
 }
 
-uint hexString_hexToInt32(const char* aight) {
-	ulong data; uint len=8;
-	hexString_toBin(aight,&len,(byte*)&data,4u);
-	return (uint)data;
+uint hexString_hexToInt32( const char* aight ) {
+    ulong data; uint len=8;
+    hexString_toBin( aight, &len, (byte*)&data, 4u );
+    return (uint)data;
 }
 
 byte* hexString_fromHex( const char* hxst, uint* outLen )
 {
-	uint outSiz = 0;
-	if( !outLen ) outLen = &outSiz; 
+    uint outSiz = 0;
+    if( !outLen ) outLen = &outSiz;
     int srcLength=strlen(hxst);
-	uint* outwrite;
+    uint* outwrite;
     if( pool_setCheckpoint() ) {
         byte dstBuf[SLICE_SIZE+1];
-		dstBuf[SLICE_SIZE]=0;
+        dstBuf[SLICE_SIZE]=0;
         int inRead=0; *outLen = 0;
         while( inRead < srcLength ) {
             uint bytecount = srcLength-inRead;
@@ -200,8 +218,8 @@ byte* hexString_fromHex( const char* hxst, uint* outLen )
                  &hxst[inRead], &bytecount, &dstBuf[0], SLICE_SIZE
                                              );
             pool_setb( &dstBuf[0], dstWrite );
-			inRead += bytecount;
-		   *outLen += dstWrite;
+            inRead += bytecount;
+           *outLen += dstWrite;
         } return (byte*)pool_collectCheckpoint();
     } else {
         CYCLE_SIZE_ERROR
@@ -211,28 +229,59 @@ byte* hexString_fromHex( const char* hxst, uint* outLen )
 
 char* hexString_fromBin( const byte* srcBin, uint binLen )
 {
-	int pos;
-	if((pos = pool_sizePlan( binLen*2 ))!=0) {
-		uint* size;
-		if( pos < 0 ) 
-			pool_push();
-		pos = 0;
-		size = pool_setCheckpoint();
-		char dstHex[SLICE_SIZE];
-		*(word*)&dstHex[SLICE_SIZE-2] = (word)0;
-		const uint MAX_CHUNK_LEN = (SLICE_SIZE/2);
-		do{ uint leftb = binLen - pos;
-			uint chunk = leftb < MAX_CHUNK_LEN
-			           ? leftb : MAX_CHUNK_LEN;
-			pos += ( hexString_toHex( 
-				 &srcBin[pos], chunk, &dstHex[0], SLICE_SIZE-2
-				                        ) / 2 );
-			pool_set( &dstHex[0] );
-		} while( (*size) && (*size < (binLen*2)) );
-		return pool_collectCheckpoint();
-	} else {
+    int pos;
+    if((pos = pool_sizePlan( binLen*2 ))!=0) {
+        uint* size;
+        if( pos < 0 )
+            pool_push();
+        pos = 0;
+        size = pool_setCheckpoint();
+        char dstHex[SLICE_SIZE];
+        *(word*)&dstHex[SLICE_SIZE-2] = (word)0;
+        const uint MAX_CHUNK_LEN = (SLICE_SIZE/2);
+        do{ uint leftb = binLen - pos;
+            uint chunk = leftb < MAX_CHUNK_LEN
+                       ? leftb : MAX_CHUNK_LEN;
+            pos += ( hexString_toHex(
+                 &srcBin[pos], chunk, &dstHex[0], SLICE_SIZE-2
+                                        ) / 2 );
+            pool_set( &dstHex[0] );
+        } while( (*size) && (*size < (binLen*2)) );
+        return pool_collectCheckpoint();
+    } else {
         CYCLE_SIZE_ERROR
         return (char*)0;
+    }
+}
+
+void hexStringDtor( void )
+{
+    StringPool* hexbottom = (StringPool*)getDingens("hexo");
+    StringPool* cmdbottom = (StringPool*)getDingens("pool");
+    if( hexbottom != Base16Pool->running ) {
+      #if DEBUG
+        printf("%s(): hexpool not at bottom!\n",__FUNCTION__);
+      #endif
+        pool_freeAllCycles_ex( hexbottom );
+    }
+    if( cmdbottom ) {
+        pool_attach_ex( cmdbottom, hexbottom );
+        pool_pop_ex( cmdbottom );
+    } else {
+        free( hexbottom );
+      #if DEBUG
+        printf("%s(): freed hexpool bottom %p\n",__FUNCTION__,hexbottom);
+      #endif
+    }
+}
+
+void hexString_Initialize( void )
+{
+    if( Base16Pool == NULL ) {
+        Base16Pool = pool_InitializeCycle();
+        pool_push();
+        Base16Pool = pool_detach();
+        addDingens( "hexo", Base16Pool, &hexStringDtor );
     }
 }
 
@@ -242,32 +291,27 @@ char* hexString_fromBin( const byte* srcBin, uint binLen )
 #define pos(cnt) (cnt % MAX_NAM_LEN)
 #define end(hex) (*(ulong*)&incoming[hex]==t)
 
-int hexString_setBufferSize(cmLn size)
+int hexString_setBufferSize( cmLn size )
 {
     int newSize = atoi(size);
     if( newSize>0 && newSize < 640000 ) {
-		int newCount = newSize/MAX_NAM_LEN;
-		pool_setfi("(%i)",newCount);
+        int newCount = newSize/MAX_NAM_LEN;
+        pool_setfi("(%i)",newCount);
         pool_setfi("(%i)",newSize);
         beginPersistChange(LOCAL);
             setPersistEntry("CYCLE_SIZE",pool_get());
-			setPersistEntry("CYCLE_COUNT",pool_last(2));
+            setPersistEntry("CYCLE_COUNT",pool_last(2));
         commitPersistChange();
         return newSize;
     } else setErrorText("invalid size parameter");
     return NULL;
 }
 
-int main(int argc,char**argv)
+int main( int argc, char**argv )
 {
-    if(! InitCommandLiner(argc,argv)
+    if(! InitCommandLiner( argc, argv )
       || hasOption('h') )
-        exit(USAGE(hexString));
-		
-	pool_InitializeCycle();
-#if DEBUG
-	pool_PrintStatistics();
-#endif	
+        exit( USAGE(hexString) );
 
     if( hasOption('b') ) {
         if ( isSwitch('b') )
@@ -278,18 +322,20 @@ int main(int argc,char**argv)
             printf("\n set hexString buffersize to: %s\n\n",getName('b'));
         exit(EXIT_SUCCESS);
     }
-	
-	if(hasOption('x')) {
-		if(!exists('x')) ExitOnError("Parameter");
-		printf( hexString_fromNum( getName('x') ) );
-		exit(CheckForError());
-	}
-	if(hasOption('n')) {
-		if(!exists('n')) ExitOnError("Parameter");
-		printf( hexString_toNum( getName('n') ) );
-		exit(CheckForError());	
-	}
-	
+
+    hexString_Initialize();
+
+    if(hasOption('x')) {
+        if(!exists('x')) ExitOnError("Parameter");
+        printf( "%s\n", hexString_fromNum( getName('x') ) );
+        exit(CheckForError());
+    }
+    if(hasOption('n')) {
+        if(!exists('n')) ExitOnError("Parameter");
+        printf( "%s\n", hexString_toNum( getName('n') ) );
+        exit(CheckForError());
+    }
+
     short mode = hasOption('e') ? 'e'
                : hasOption('d') ? 'd'
                : false;
@@ -320,39 +366,39 @@ int main(int argc,char**argv)
             fseek(f,0,SEEK_END);
             int srcLength = ftell(f);
             fseek(f,0,SEEK_SET);
-			const int chunksize = mode == 'd' ? (CYCLE_SIZE) : (CYCLE_SIZE/2);
-			chunksize = chunksize < srcLength
-                      ? chunksize : srcLength;			
+            const int chunksize = mode == 'd' ? (CYCLE_SIZE) : (CYCLE_SIZE/2);
+            chunksize = chunksize < srcLength
+                      ? chunksize : srcLength;
             char buffer[chunksize+1];
-			int progress = 0;
-			while( progress < srcLength ) { 
-				int byteLeft = srcLength - progress;
-				int currentchunk = byteLeft < chunksize
-				                 ? byteLeft : chunksize;
-				if( mode == 'd' && currentchunk < chunksize )
-					currentchunk += (currentchunk % 2);
-				progress += fread( &buffer[0], 1, currentchunk, f );
-				DEBUGFMT("readbytes: %i",progress)
-				buffer[currentchunk]='\0';
-				if( mode == 'e' ) {
-					DEBUGFMT("currentchunk: %i",currentchunk)
-					DEBUGFMT("maxchunksize: %i",chunksize)
-					fwrite( hexString_fromBin( &buffer[0], currentchunk ),1,(currentchunk*2),o);
-				} else {
-					byte* bindat = hexString_fromHex( &buffer[0], &currentchunk );
-					fwrite( bindat, 1, currentchunk, o );
-				}
-			}
-			printf("\n\n");
-			    fflush(f);
-			    fclose(f);
+            int progress = 0;
+            while( progress < srcLength ) {
+                int byteLeft = srcLength - progress;
+                int currentchunk = byteLeft < chunksize
+                                 ? byteLeft : chunksize;
+                if( mode == 'd' && currentchunk < chunksize )
+                    currentchunk += (currentchunk % 2);
+                progress += fread( &buffer[0], 1, currentchunk, f );
+                DEBUGFMT("readbytes: %i",progress)
+                buffer[currentchunk]='\0';
+                if( mode == 'e' ) {
+                    DEBUGFMT("currentchunk: %i",currentchunk)
+                    DEBUGFMT("maxchunksize: %i",chunksize)
+                    fwrite( hexString_fromBin( &buffer[0], currentchunk ), 1, (currentchunk*2), o );
+                } else {
+                    byte* bindat = hexString_fromHex( &buffer[0], &currentchunk );
+                    fwrite( bindat, 1, currentchunk, o );
+                }
+            }
+            printf("\n\n");
+                fflush(f);
+                fclose(f);
             if( o != stdout ) {
                 fflush(o);
-				fclose(o);
+                fclose(o);
             }
-        } ExitOnError("BUFFER");
-        printf("\n\n");
-        exit(CheckForError());
+        } ExitOnError( "Buffer" );
+        printf( "\n\n" );
+        exit( EXIT_SUCCESS );
     } else {
         int modus = mode=='d' ? 1 : 2;
         if(!isSwitch('s'))
@@ -392,7 +438,7 @@ int main(int argc,char**argv)
                 printf("output saved to file: %s\n",getName('s'));
             }
         printf("\n\n");
-        exit(CheckForError());
+        exit( CheckForError() );
     }
 }//end
 #endif

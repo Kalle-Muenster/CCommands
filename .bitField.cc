@@ -101,7 +101,10 @@ const char* bitField_uintToString( uint val )
     TwoInt text;
     pool_ensure( 32 );
     for( int i = 3; i >= 0; --i ) {
-        text.data = bitField_byteToString( (val>>(i*8)) & 0x000000ffu );
+        uint shifti = i * 8;
+        uint maski = 0x000000ffu << shifti;
+        byte value = (byte)((val & maski) >> shifti);
+        text.data = bitField_byteToString( value );
         pool_set4( text.ints[0] );
         pool_set4( text.ints[1] );
     } return pool_merge( 8 );
@@ -109,14 +112,14 @@ const char* bitField_uintToString( uint val )
 
 const char* bitField_longToString( ulong val )
 {
-    ulong texti;
+    TwoInt text;
     pool_ensure( 64 );
-    for( long i = 7; i >= 0; --i ) {
-        ulong shifti = i << 3;
-        ulong maski = 0x00000000000000ffu << shifti;
-        byte bereit = (byte)( (val & maski) >> shifti );
-        texti = bitField_byteToString( bereit );
-        pool_set8( texti );
+    for( int i = 7; i >= 0; --i ) {
+        const ulong shiftl = (ulong)(i * 8);
+        const ulong maskl = (ulong)0xffu << shiftl;
+        const byte value = (byte)( (ulong)(val & maskl) >> shiftl );
+        text.data = bitField_byteToString( value );
+        pool_set8( text.data );
     } return pool_merge( 8 );
 }
 
@@ -248,7 +251,7 @@ const char* bitsOfTheData( void* data, int size )
     break; }
 }
 
-void drawThisBits(int chart,void* bits)
+void drawThisBits( int chart, void* bits )
 {
     printf( renderIndices( chart ) );
     printf( "\n  %s\n\n", bitsOfTheData( bits, chart ) );
@@ -256,21 +259,21 @@ void drawThisBits(int chart,void* bits)
 
 void setViewSigns( cmLn bitSigns )
 {
-	if ( bitSigns ) {
-		if ( strlen(bitSigns) >= 2 ) {
-			beginPersistChange(LOCAL);
-			setPrefixed("ZERO",setTempf("'%c'",bitSigns[0]));
-			printf("Set '%c' character to be used for 0 bits\n",getTemp());
-			setPrefixed("ONES",setTempf("'%c'",bitSigns[1]));
-			printf("Set '%c' character to be used for 1 bits\n",getTemp());
-			commitPersistChange();
-		} else setError("at least 2 characters",2);
-	} else {
-		beginPersistChange(LOCAL);
-		removePersistEntry("BITFIELD_ZERO");
-		removePersistEntry("BITFIELD_ONES");
-		commitPersistChange();
-	} setError("Successfully set Bit Signs!",0);
+    if ( bitSigns ) {
+        if ( strlen(bitSigns) >= 2 ) {
+            beginPersistChange(LOCAL);
+            setPrefixed("ZERO",setTempf("'%c'",bitSigns[0]));
+            printf("Set %s character to be used for 0 bits\n",getTemp());
+            setPrefixed("ONES",setTempf("'%c'",bitSigns[1]));
+            printf("Set %s character to be used for 1 bits\n",getTemp());
+            commitPersistChange();
+        } else setError("at least 2 characters",2);
+    } else {
+        beginPersistChange(LOCAL);
+        removePersistEntry("BITFIELD_ZERO");
+        removePersistEntry("BITFIELD_ONES");
+        commitPersistChange();
+    } setError("Successfully set Bit Signs!",0);
 }
 
 int main( int argc, char**argv )
@@ -290,11 +293,11 @@ int main( int argc, char**argv )
     if ( hasOption('h') ) {
         setOption('h',"x");
     }
-	
-	if ( isModus("set") ) {
-		setViewSigns( rawNext('s') );
-		ExitOnError("Input");
-	}
+
+    if ( isModus("set") ) {
+        setViewSigns( rawNext('s') );
+        exit( CheckForError() );
+    }
 
     int size     = 0;
     ulong fieldL = 0;
@@ -306,7 +309,7 @@ int main( int argc, char**argv )
         float florp;
         sscanf(flupp,"%f",&florp);
         fieldI = *(uint*)&florp;
-        printf( "32bit field of float: %f\n\n ", florp );
+        printf( "32bits of float: %f\n\n ", florp );
         if (hasOption('h'))
             size = FourCC("8\0\0\0");
         else size = 4;
@@ -321,15 +324,15 @@ int main( int argc, char**argv )
         else size = 8;
     } else
     if ( search('i') ) {
-        fieldI = atoi( getName('i') );
-        printf( "32bits of integer: %i\n\n", fieldI );
+        sscanf( getName('i'), "%u", &fieldI );
+        printf( "32bits of integer: %u\n\n", fieldI );
         if (hasOption('h'))
             size = FourCC("8\0\0\0");
         else size = 4;
     } else
     if ( search('l') ) {
-        fieldL = atoll( getName('l') );
-        printf( "64bit of integer %ull \n\n", fieldL );
+        sscanf( getName('l'), "%llu", &fieldL );
+        printf( "64bit of integer: %llu\n\n", fieldL );
         if (hasOption('h'))
             size = FourCC("16\0\0");
         else size = 8;
@@ -343,7 +346,7 @@ int main( int argc, char**argv )
             byte* data = bitField_stringToData( raw, &dataSize );
             while (dataSize >= 8) {
                 dataSize -= 8;
-                printf( "\n%ull\n",*(ulong*)data);
+                printf( "\n%llu\n",*(ulong*)data);
                 data += 8;
             }
             while (dataSize >= 4) {
@@ -368,15 +371,16 @@ int main( int argc, char**argv )
     ExitOnError( "Parameter" );
     if ( size > 8 ) {
         setOption( 'h', setTempf( "0x%%%sx\n\n", (const char*)&size ) );
-        if ( size == *"8" )
+        if ( size == *"8" ) {
             printf( getName('h'), fieldI );
-        else
+        } else {
             printf( getName('h'), fieldL );
+        }
     } else {
-        setOption( 'h',"%s\n\n" );
-        void* data;
-        if (size > 4) data = &fieldL;
-        else data = &fieldI;
+        // setOption( 'h',"%s\n\n" );
+        void* data = (size == 8)
+                   ? (void*)&fieldL
+                   : (void*)&fieldI;
         drawThisBits( size, data );
     }
 

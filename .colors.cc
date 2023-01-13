@@ -39,19 +39,16 @@ const char* back = "\[0m";
 
 const char* colors_string( const char* text, const char* emac )
 {
-    DEBUGLOG("enter")
-    //pool_set( "cmd.exe /c \"echo " );
+	pool_set("echo ");
     pool_set( emac );
     pool_set( text );
     pool_set( back );
-    //pool_set( "\"" );
-    return pool_merge( 3 );
+    return pool_merge( 4 );
 }
 
 
 const char* colors_select( const char* color )
 {
-    DEBUGLOG("enter")
     switch(*(uint*)color) {
         case FOURCC('R','e','d','\0'): return &Red[0];
         case FOURCC('G','r','e','e'): return &Green[0];
@@ -78,16 +75,14 @@ int main(int argc,char**argv)
         setOption('t', rawName(1) );
     }
 
-    DEBUGLOG("Here!")
-    const char* coloredText = colors_string( getName('t'),
-                              colors_select( getName('c') )
-                              );
-
-    // system( coloredText );
-
-    printf( "%s" )
-    fwrite( coloredText, 1, strlen(coloredText), 1 );
-    printf("\n");
+	const char* emacstring = colors_select( getName('c') );
+    const char* coloredText = colors_string( getName('t'), emacstring ); 
+                        //      colors_select( getName('c') )
+                        //      );
+    system( coloredText );
+	
+    // fwrite( coloredText, 1, strlen(coloredText), 1 );
+    printf( "\n" );
 
     exit( CheckForError() );
 }

@@ -19,7 +19,7 @@
 //  base64_swrite( void*src,uint Tsiz,uint cntTs, B64S* ostr ) // like fwrite(s,s,c,f) but takes B64S* instead of FILE* f
 //  base64_destream( B64S* ) -> clean up a stream (e.g. depending on type.. FILE may flush/close, POOL will pop, DATA ...does nothin )
 
-const b64Frame nullFrame = { 0 };
+static b64Null nullFrame = { 0 };
 
 int removeLBs(char* text)
 {
@@ -71,7 +71,7 @@ static b64Frame* file_get_enc( b64Stream* strm )
     return fr;
 }
 
-static b64Frame* file_get_dec(b64Stream* strm)
+static b64Frame* file_get_dec( b64Stream* strm )
 {
     b64Frame* fr = (b64Frame*)&((b64File*)strm)->buf;
     fr->u32 = 1027423549u;
@@ -88,79 +88,73 @@ static b64Frame* file_get_dec(b64Stream* strm)
 }
 
 // read 4 chars b64 data to return 3 decoded bytes + 0 on success or +!=0 on bad b64 data input
-static b64Frame read_nxt_dec(void* stream)
+static b64Frame read_nxt_dec( b64Stream* stream )
 {
-    return base64_decodeFrame(
-        *((b64Stream*)stream)->get((b64Stream*)stream)
-                               );
+    return base64_DecodeFrame( stream->b64, *stream->get( stream ) );
 }
 
 //read 3 bytes as 4 chars b64 data from 'stream' or returns NULL on stream empty
-static b64Frame read_nxt_enc(void* stream)
+static b64Frame read_nxt_enc( b64Stream* stream )
 {
-    b64Frame frme = *((b64Stream*)stream)->get((b64Stream*)stream);
-    if ( frme.u8[3] ) return base64_encEndFrame( frme );
-    else return base64_encodeFrame( frme );
+    b64Frame frme = *stream->get( stream );
+    if ( frme.u8[3] ) return base64_encEndFrame( stream->b64, frme );
+    else return base64_EncodeFrame( stream->b64, frme );
 }
 
-static b64Frame read_end_enc(void* stream)
+static b64Frame read_end_enc( b64Stream* stream )
 {
-    b64Stream* strm = (b64Stream*)stream;
-    if ( base64_canStream(strm) ) { // <- TODO:  try to let done without doing this check
-        b64Frame rdinp = *strm->get(strm);
+    if ( base64_canStream(stream) ) { // <- TODO:  try to let done without doing this check
+        b64Frame rdinp = *stream->get(stream);
         if (rdinp.i8[0] == '\n' || rdinp.i8[1] == '\n' || rdinp.i8[2] == '\n')
             return nullFrame;
-        return base64_encodeFrame(rdinp);
-    }
-    else return nullFrame;
+        return base64_EncodeFrame( stream->b64, rdinp );
+    } else return nullFrame;
 }
 
-static b64Frame peak_nxt_dec( void* stream )
+static b64Frame peak_nxt_dec( b64Stream* stream )
 {
-	b64Frame   frme = { EncoderState.CodeTable[0]
-                      | EncoderState.CodeTable[0] << 8
-					  | EncoderState.CodeTable[0] << 16
-					  | EncoderState.CodeTable[0] << 24 };
-	FILE*      file = (FILE*)((b64Stream*)stream)->dat;
-	const long peak = -fread( &frme, 1, 4, file );
-	fseek( file, peak, SEEK_CUR );
-	return base64_decodeFrame( frme );
+	b64Frame   frme = { stream->b64->CodeTable[0]
+                      | stream->b64->CodeTable[0] << 8
+					  | stream->b64->CodeTable[0] << 16
+					  | stream->b64->CodeTable[0] << 24 };
+	const long peak = -fread( &frme, 1, 4, (FILE*)stream->dat );
+	fseek( (FILE*)stream->dat, peak, SEEK_CUR );
+	return base64_DecodeFrame( stream->b64, frme );
 }
 
-static b64Frame peak_nxt_enc( void* stream )
+static b64Frame peak_nxt_enc( b64Stream* stream )
 {
 	b64Frame   frme;
-	FILE*      file = (FILE*)((b64Stream*)stream)->dat;
+	FILE*      file = (FILE*)stream->dat;
 	const long peak = -fread( &frme, 1, 3, file );
 	fseek( file, peak, SEEK_CUR );
-	return base64_encodeFrame( frme );
+	return base64_EncodeFrame( stream->b64, frme );
 }
 
-static b64Frame write_nxt_dec( void* frame )
+
+static b64Frame write_nxt_dec( b64Stream* mitFrameDrann )
 {
-    return base64_decodeFrame( *(b64Frame*)frame );
+    return base64_DecodeFrame( mitFrameDrann->b64, mitFrameDrann->b64->NextFrame );
 }
 
-static b64Frame write_nxt_enc( void* frame )
+static b64Frame write_nxt_enc( b64Stream* mitFrameDrann )
 {
-    return base64_encodeFrame( *(b64Frame*)frame );
+    return base64_EncodeFrame( mitFrameDrann->b64, mitFrameDrann->b64->NextFrame );
 }
 
 static int file_write_set( b64Stream* strm, b64Frame frame )
 {
-    fwrite( &frame.i8[0], strm->flg[3], 1, (FILE*)((b64File*)strm)->dat );
-    return strm->flg[0];
+	fwrite( &frame.i8[0], strm->flg[3], 1, (FILE*)((B64F*)strm)->dat );
+	return strm->flg[0];
 }
 
 static int pool_write_set( b64Stream* strm, b64Frame frame )
 {
-    pool_setb( &frame.i8[0], strm->flg[3] );
-    return strm->flg[3];
+	pool_setb( &frame.i8[0], strm->flg[3] );
+	return strm->flg[3];
 }
 
-
-
-ptval b64_pool_fill_frames(void* dat, ptval siz, ptval cnt, b64Pool* strm)
+ptval b64_pool_fill_frames( void* dat, ptval siz, ptval cnt, b64Pool* strm )
 {
     byte* data = (byte*)dat;
     pool_attach( strm->dat );
@@ -170,7 +164,7 @@ ptval b64_pool_fill_frames(void* dat, ptval siz, ptval cnt, b64Pool* strm)
     return cnt;
 }
 
-int b64_data_fill_frame(b64Stream* stream, b64Frame frame)
+int b64_data_fill_frame( b64Stream* stream, b64Frame frame )
 {
     if (stream->len == EMPTY && stream->pos == 0)
         stream->len = 0;
@@ -224,7 +218,7 @@ static uint dec_from_b64s( void* bufferDst, uint blocksize, uint blockcount, b64
             wantBytes -= 3;
         } available = wantBytes;
         for( byte* dst = (byte*)bufferDst; available > 0; dst += 3 ) {
-            if( ( asFrame( dst ) = stream->nxt(stream) ).u8[3] ) {
+            if( ( asFrame( dst ) = stream->nxt( stream ) ).u8[3] ) {
                 asFrame( dst ).i8[3] = '\0';
                 break; }
             available -= 3;
@@ -254,7 +248,7 @@ static uint enc_into_b64s( void* bufferSrc, uint size, uint count, b64Stream* st
     if (wantWrite >= stream->flg[0]) {
         const byte* End = Src + wantWrite;
         for (; Src != End; Src += stream->flg[0]) {
-            stream->set( stream, base64_encodeFrame( *(b64Frame*)Src ) );
+            stream->set( stream, base64_EncodeFrame( stream->b64, *(b64Frame*)Src ) );
         }
     } size = wantWrite + modulo;
     if (modulo) {
@@ -265,7 +259,7 @@ static uint enc_into_b64s( void* bufferSrc, uint size, uint count, b64Stream* st
                 cach->u8[i] = *Src++;
                 if (!--modulo) break;
                 if (cach->u8[stream->flg[0] - 1]) {
-                    stream->set( stream, base64_encodeFrame(*cach) );
+                    stream->set( stream, base64_EncodeFrame( stream->b64, *cach ) );
                     i = cach->u32 = 0;
                 }
             }
@@ -287,12 +281,12 @@ static uint dec_into_b64s( void* bufferSrc, uint size, uint count, b64Stream* st
         byte* buf = (byte*)bufferSrc;
         for (int i = 0; i < wantWrite; ++i) {
             last.u8[i] = buf[i];
-        } stream->set( stream, base64_decodeFrame( last ) );
+        } stream->set( stream, base64_DecodeFrame( stream->b64, last ) );
     return 1; }
     int frames = wantWrite / stream->flg[0];
     b64Frame* Src = (b64Frame*)bufferSrc;
     while (frames--)
-        stream->set( stream, base64_decodeFrame( *Src++ ) );
+        stream->set( stream, base64_DecodeFrame( stream->b64, *Src++ ) );
     return wantWrite / size;
 }
 
@@ -347,9 +341,12 @@ uint base64_initNewB64StreamStruct( const char* mode, b64Stream* stream )
 
 b64Stream* base64_createDataStream( void* src_dat, uint src_len, const char* mode )
 {
-    b64Stream* stream = (b64Stream*)junk_allocateNewObject( (cmDtFunc)&base64_destream,
-                                         sizeof(b64Stream) );
+    b64Stream* stream = (b64Stream*)junk_allocateNewObject(
+			 (cmDtFunc)&base64_destream, sizeof(b64Stream) );
+
     uint m = base64_initNewB64StreamStruct( mode, stream );
+	stream->b64 = encoderState;
+
     char* Mode = (char*)&m;
     if ( Mode[0] == 'd' && Mode[1] == 'r' ) {
         if (src_len == EMPTY) {
@@ -368,7 +365,10 @@ b64Pool* base64_createPoolStream( const char* mode )
 {
     b64Pool* stream = (b64Pool*)junk_allocateNewObject(
            (cmDtFunc)&base64_destream, sizeof(b64Pool) );
+
     uint m = base64_initNewB64StreamStruct( mode, (b64Stream*)stream );
+	stream->b64 = encoderState;
+	
     if (wasError())
         return stream;
     StringPool* p = pool_push();
@@ -475,13 +475,13 @@ int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned 
                     stream->len = NULL;
                     stream->pos = 0;
 #endif
-                    stream->nxt = Mode[0] == 'e'
-                                ? &write_nxt_enc
-                                : &write_nxt_dec;
-                    stream->set = &file_write_set;
-					stream->get = Mode[0] == 'e'
-					            ? &peak_nxt_dec
-								: &peak_nxt_enc;
+					if ( Mode[0] == 'e' ) {
+						stream->nxt = &write_nxt_enc;
+						stream->get = &peak_nxt_dec;
+					} else {
+						stream->nxt = &write_nxt_dec;
+						stream->get = &peak_nxt_enc;
+					} stream->set = &file_write_set;
                 }
             } else {
                 tempf( "bad file: '%s'", file );
@@ -491,11 +491,14 @@ int base64_initB64FileStreamStruct( b64File* stream, const char* file, unsigned 
     } return !wasError();
 }
 
-b64File* base64_createFileStream( const char* fileName, const char* mode )
+b64File* base64_CreateFileStream( b64State* state, const char* fileName, const char* mode )
 {
     b64File* stream = (b64File*)junk_allocateNewObject(
            (cmDtFunc)&base64_destream, sizeof(b64File) );
+
     uint mod = base64_initNewB64StreamStruct( mode, (b64Stream*)stream );
+	stream->b64 = base64_InitializeState( state );
+
     mod = prepare_file_mode( mod );
     clearAllErrors();
     if ( base64_initB64FileStreamStruct( stream, fileName, mod ) ) {
@@ -503,6 +506,11 @@ b64File* base64_createFileStream( const char* fileName, const char* mode )
     } else {
         return (B64F*)junk_drop( stream );
     }
+}
+
+b64File* base64_createFileStream( const char* fileName, const char* mode )
+{
+    return base64_CreateFileStream( encoderState, fileName, mode );
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -553,7 +561,8 @@ b64Frame base64_peakWrite( b64Stream* stream )
 // or 4 byte when decoding) into a 'w' stream
 int base64_putFrame( b64Stream* stream, b64Frame frame )
 {
-    return stream->set( stream, stream->nxt( &frame ) );
+	stream->b64->NextFrame = frame;
+    return stream->set( stream, stream->nxt( stream ) );
 }
 
 // get size of one frame <direction> data of b64 <stream>
@@ -564,7 +573,7 @@ int base64_frameSize( char direction, b64Stream* stream )
          : (int)stream->flg[3];
 }
 
-B64Nuller base64_Nuller(void)
+b64Null base64_Nuller(void)
 {
     return nullFrame;
 }
@@ -572,11 +581,12 @@ B64Nuller base64_Nuller(void)
 int base64_isEndFrame( b64Frame frame, b64Stream* stream )
 {
     return (stream->flg[0] == DECODE) ? frame.u8[3] != 0
-         : frame.u32 == base64_Nuller().u32;
+         : frame.u32 == nullFrame.u32;
 }
 
 void base64_destream( b64Stream* stream )
 {
+	stream->b64 = NULL;
     switch (stream->flg[2]) {
     case FILESTREAM:
         fflush((FILE*)stream->dat);

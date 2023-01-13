@@ -266,11 +266,11 @@ void* junk_allocateNewObject( cmDtFunc objDtor, uint objSize )
 // chunks which will be integrated via junk_objectivateMemory(anydata)
 // when data before was not allocated via using the junkyard api also
 // then this data just only could be freed later again if the same alien
-// api which also was used for allocating the chunk is used for this...
-// anyway it is possible creating an object from some alien data chunk:
-// The funtion passed as the destructor then must take care about freeing
-// up ALL data completely on it's own then. for doing this, it can use
-// any api what ever was used once before for allocating the memory
+// api which also was used for allocating the chunk is used for freeing
+// it again. Anyway it is possible creating an object from some alien
+// data chunk: The funtion passed as the destructor then must take care
+// of freeing up ALL object data on it's own then. So it should use same
+// api that before was used for allocating it in the distant environment
 void* junk_objectivateMemory( cmDtFunc objDtor, void* objMem )
 {
 #if DEBUG

@@ -28,7 +28,7 @@ extern "C" {
 #include <hexString.h>
 #else
 
-// number conversion decimal <-> hex
+HEXHEX_API void  hexString_Initialize( void );
 
 // convert decimal numbers to hexadecimal number
 HEXHEX_API char* hexString_fromNum(const char* num);

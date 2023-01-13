@@ -251,7 +251,7 @@ ExecutableCmd cLine_compileExpresion( void* state, const char* /*IN*/ cCode, con
             DEBUGFMT( "add_include_path: %s", Cincl )
             tcc_add_include_path( compiler, Cincl );
             while( *Cincl++ );
-        } 
+        }
     }
     tcc_add_include_path( compiler, LOCUS_POCUS );
     tcc_add_include_path( compiler, getPathOfTheCommander() );
@@ -272,7 +272,7 @@ ExecutableCmd cLine_compileExpresion( void* state, const char* /*IN*/ cCode, con
     // code generation is done within 4 separate steps:
     // 1. precproc (#include <bla.h>'s, #define BLUB(s) )
     // 2. typedefs (declare types in resolver scope) <- still TODO
-    // 3. vardecls (variables in the resolver scope) 
+    // 3. vardecls (variables in the resolver scope)
     // 4. function per each parsed commandline token
     generateResolver( fragmentName, autoID,
     generateDeclares( fragmentName, autoID,
@@ -368,7 +368,7 @@ int main(int argc,char**argv)
         printf("\n");
         showOptions();
     }
-	
+
     if( isAnyOtherModusThen( "verbose" ) ) {
         int success = false;
         if( isModus("test") ) {
@@ -384,8 +384,8 @@ int main(int argc,char**argv)
        else if( isAnyModus("rem*") && (!success) )
                 success = persistSEToption( getModus('r'), rawNext('r') );
             if( nonCommittedChanges() ) {
-		commitPersistChange(); exit( CheckForError() ); }
-		} ExitOnError( "Modus" );
+        commitPersistChange(); exit( CheckForError() ); }
+        } ExitOnError( "Modus" );
     }
 
     uint callId;
@@ -395,8 +395,8 @@ int main(int argc,char**argv)
         setErrorText( "Could not create compiler state\n" );
         tcc_delete( compiler );
     } ExitOnError( "Interpreter" );
-	
-	if (hasOption('v')) noOption('v');
+
+    if (hasOption('v')) noOption('v');
 
     ExecutableCmd command = cLine_compileExpresion( compiler, NULL, getVariable("CLINE_PATH"), "resolver", &callId );
 
@@ -423,7 +423,7 @@ int main(int argc,char**argv)
                 amode = getresult.value.number >= 1.0;
             } if ( catchError( "CLINE_ASYNCHRON" ) ) {
                 printf( "Catched error: FeatureGet 'CLINE_ASYNCHRON'\n" );
-            } 
+            }
         }
         DEBUGFMT("amode is: %i",amode)
         if( ASYNC_MODE || amode == 1 ) {
@@ -636,11 +636,11 @@ char* generateDeclares( const char* fragmentName, uint fragmentID, char* positio
                     if (!search('m') ) setOption('m',"\"er\"");
                     else setOption('m', toQuoted(getName('m')));
                     position = declFopen( position, decl,
-                           " base64_createFileStream(\"",
-                             &fragment[0] );
+          " base64_createFileStream(\"", &fragment[0]
+                                          );
                 } break;
                 default: {
-					if (decl[0]=='~') ++decl;
+                    if (decl[0]=='~') ++decl;
                     const uint parts = toSplitList( decl, " \0" );
                     char* declcode = &decldata[0];
                     for( int i=0; i<3 &&  i<parts; ++i) {

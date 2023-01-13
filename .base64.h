@@ -5,8 +5,8 @@
 #include <stdio.h>
 
 
-
 #if (!defined(NOT_USE_ENVIRONMENTOR)) && defined(__TINYC__)
+#define PREFER_LOCAL (1)
 #include ".environMentor.h"
 #if WINDOWS
 #include <io.h>
@@ -82,12 +82,13 @@ typedef union BASE64_API b64Frame {
     byte  u8[4];
     char  i8[4];
 } b64Frame;
-typedef b64Frame BASE64_API const B64Nuller;
-#endif
 
 typedef struct BASE64_API b64State {
     bool isTableInitialized;
     bool isExternCall;
+	b64Frame NextFrame;
+	ulong Context;
+    StringPool* BasePool;
     const char* CodeTable;
     char codeTableBuffer[66];
 #if BASE64_VERFAHREN == 2
@@ -95,16 +96,25 @@ typedef struct BASE64_API b64State {
 #endif
 } b64State;
 
+typedef const b64Frame BASE64_API b64Null;
+#endif
+
 #ifdef  EXPORT_COMMANDLINER_LIBRARIES
 #include <base64.h>
 #else
 
-BASE64_API void        base64_Initialize(void);
+BASE64_API b64State*   base64_InitializeState( b64State* state );
+BASE64_API void        base64_Initialize( void );
+BASE64_API b64State*   base64_State( void );
+BASE64_API b64Frame    base64_EncodeFrame( b64State* state, b64Frame threeByte );
+BASE64_API b64Frame    base64_DecodeFrame( b64State* state, b64Frame fourChars );
 BASE64_API b64Frame    base64_encodeFrame( b64Frame threeByte );
-BASE64_API b64Frame    base64_decodeFrame( b64Frame fourChars ); //returns 3 bytes bin data + 0 or +!=0 on decoding errors (4th byte then points actual bad input byte)
-BASE64_API b64Frame    base64_encEndFrame( b64Frame threeBytePlusFourthLengthByte );
-BASE64_API int         base64_encodeData(char* dst, const byte* src, uint cbSrc, uint lbOff ); //encode binary data of cbSrc length
-BASE64_API int         base64_decodeData(byte* dst, const char* src, uint cbSrc ); //decode base64 data (at best terminated by equal sign)
+BASE64_API b64Frame    base64_decodeFrame( b64Frame fourChars );
+BASE64_API b64Frame    base64_encEndFrame( b64State* state, b64Frame threeBytePlusFourthLengthByte );
+BASE64_API int         base64_encodeData( char* dst, const byte* src, uint cbSrc, uint lbOff ); //encode binary data of cbSrc length
+BASE64_API int         base64_decodeData( byte* dst, const char* src, uint cbSrc ); //decode base64 data (at best terminated by equal sign)
+BASE64_API int         base64_EncodeData( b64State* state, char* dst, const byte* src, uint cbSrc, uint lbOff );
+BASE64_API int         base64_DecodeData( b64State* state, byte* dst, const char* src, uint cbSrc );
 
 BASE64_API const char* base64_encode(const byte* data, uint* size);
 BASE64_API const byte* base64_decode(const char* encd, uint* size);
@@ -126,13 +136,27 @@ BASE64_API int         base64_decodeFromFile(const char* fileName, int* out_len)
 
 
 // get the regular, base64 standard coding table
-BASE64_API const char* base64_b64Table(void);
+BASE64_API const char* base64_b64Table( void );
 
 // get actually in use coding table loaded
-BASE64_API const char* base64_getTable(void);
+BASE64_API const char* base64_getTable( void );
+BASE64_API const char* base64_GetTable( b64State* state );
 
 // set a base64 table to be used for following operation (table won't be stored persistent)
-BASE64_API const char* base64_setTable(const char* tableOrFile);
+BASE64_API const char* base64_setTable( const char* tableOrFile );
+BASE64_API const char* base64_SetTable( b64State* state, const char* tableOrFile );
+
+// simply sets actually used table to passed memory location. then returns pointer to previously used memory
+BASE64_API const char* base64_useTable( const char* changeTo );
+BASE64_API const char* base64_UseTable( b64State* state, const char* changeTo );
+
+// Set up and reconfigure for using a different CodingTable.
+// parameter can be:
+// - String, consisting from 64 unique characters, terminated by a '=' sign as 65th carracter
+// - Filename, pointing a file which contains 64 unique caracters + terminating '=' sign
+// - NULL/stdin, will make the programm waiting for available input on the stdin stream
+BASE64_API const char* base64_newTable( const char* TableData_Or_FileName_Or_stdin );
+BASE64_API const char* base64_NewTable( b64State* state, const char* TableData_Or_FileName_Or_stdin );
 
 // does a check if a passed table matches the actual configured 'Valid Table' conditions.
 // If the table indeed IS valid, it then sets up that table as regularly used 'CodingTable'
@@ -141,13 +165,6 @@ BASE64_API const char* base64_setTable(const char* tableOrFile);
 // 'invalid table' by returning a filtered (but so too short) version of the table which
 // has any invalid characters being removed from it.
 BASE64_API const char* base64_setTable_Checked( const char* newTable );
-
-// Set up and reconfigure for using a different CodingTable.
-// parameter can be:
-// - String, consisting from 64 unique characters, terminated by a '=' sign as 65th carracter
-// - Filename, pointing a file which contains 64 unique caracters + terminating '=' sign
-// - NULL/stdin, will make the programm waiting for available input on the stdin stream
-BASE64_API const char* base64_newTable(const char* TableData_Or_FileName_Or_stdin);
 
 #endif
 

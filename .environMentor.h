@@ -152,8 +152,7 @@ FeatureGet  getFeatured(const char*);
 // that as a 'FeatureGet' then the in that FeatureGet contained value after changing it gets passed to setFeatured(),
 // it then will update that environment variable where getFeature() before has fetched the value from. If it instead
 // was fetched from a macro reflector, then that reflector enry where it was fetched from will be updated therefore)
-int setFeatured( FeatureGet* store );
-
+int         setFeatured( FeatureGet* store );
 // set environment variable
 void        setVariable(const char*, const char*);
 // stores a c-code macro to either the global reflector or a local reflector

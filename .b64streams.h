@@ -20,7 +20,20 @@ typedef union BASE64_API b64Frame {
     char  i8[4];
 } b64Frame;
 
-typedef b64Frame BASE64_API const B64Nuller;
+typedef struct BASE64_API b64State {
+    bool isTableInitialized;
+    bool isExternCall;
+    b64Frame NextFrame;
+    ulong Context;
+    StringPool* BasePool;
+    const char* CodeTable;
+    char codeTableBuffer[66];
+#if BASE64_VERFAHREN == 2
+    char derDickeBatzen[256];
+#endif
+} b64State;
+
+typedef const BASE64_API b64Frame b64Null;
 
  // flg[0]: byte per frame in streamdirection
  // flg[1]: type of stream (DATA, FILE, POOL)
@@ -45,22 +58,24 @@ typedef enum BASE64_API b64StreamMode {
 
 typedef struct BASE64_API b64Stream b64Stream;
 typedef struct BASE64_API b64Stream {
+	b64State*  b64; 
     ptval      pos;
     b64Frame*  buf;
     void*      dat;
     ptval      len;
-    b64Frame (*nxt)(void*);
+    b64Frame (*nxt)(b64Stream*);
     int      (*set)(b64Stream*, b64Frame);
     b64Frame*(*get)(b64Stream*);
     byte       flg[4];
 } b64Stream, B64S;
 
 typedef struct BASE64_API b64File {
+	b64State*  b64; 
     ptval      pos;
     ptval      buf;
     void*      dat;
     ptval      len;
-    b64Frame (*nxt)(void*);
+    b64Frame (*nxt)(b64Stream*);
     int      (*set)(b64Stream*, b64Frame);
     b64Frame*(*get)(b64Stream*);
     byte       flg[4];
@@ -69,17 +84,16 @@ typedef struct BASE64_API b64File {
 typedef struct BASE64_API StringPool StringPool;
 typedef StringPool BASE64_API POOL;
 typedef struct BASE64_API b64Pool {
+	b64State*  b64;
     uint*      pos;
     b64Frame*  buf;
     POOL*      dat;
     uint*      len;
-    b64Frame (*nxt)(void*);
+    b64Frame (*nxt)(b64Stream*);
     int      (*set)(b64Stream*, b64Frame);
     b64Frame*(*get)(b64Stream*);
     byte       flg[4];
-} b64Pool;
-
-typedef b64File BASE64_API B64F;
+} b64Pool, B64P;
 
 #if     BASE64_WITH_LINEBREAKS > 0
 #define BASE64_STREAM_RATE(b64strm) \
@@ -118,13 +132,16 @@ BASE64_API int         base64_initB64FileStreamStruct( b64File* stream, const ch
 // create a memory stream in or out of a buffer.
 BASE64_API b64Stream*  base64_createDataStream( void* src_dat, uint src_len, const char* mode );
 
-// almost same like fopen
+// open a cryptic file stream (almost same like fopen)
 BASE64_API b64File*    base64_createFileStream( const char* fnam, const char* mode );
 
-// create a stream into/outoff a pool
+// open a cryptic file stream (handeled by given EncoderState)
+BASE64_API b64File*    base64_CreateFileStream( b64State* state, const char* fnam, const char* mode );
+
+// create a stream into/outoff the pool
 BASE64_API b64Pool*    base64_createPoolStream( const char* mode );
 
-// bytes left till eos (if at least the stream provides such information,.. otherwise EMPTY is returned)
+// bytes left till EOS (if at least the stream provides such information,.. otherwise EMPTY is returned)
 BASE64_API uint        base64_streamBytesRemaining( B64S* );
 
 // is everything valid?, and.. are stream bytes available?
@@ -135,7 +152,7 @@ BASE64_API int         base64_frameSize( char direction, B64S* stream );
 
 // get a preinitialized B64Frame to be used for terminating transmissions through encoding streams
 // (e.g. let stream recipients know about its safe closing the stream due to no data will follow
-BASE64_API B64Nuller   base64_Nuller(void);
+BASE64_API b64Null     base64_Nuller(void);
 
 // check if some just received portion (b64Frame) is signaling EOS (end of stream)
 BASE64_API int         base64_isEndFrame( b64Frame frame, B64S* );

@@ -70,12 +70,13 @@ void poolDingsBumsWeg(void)
 }
 #endif
 
-void pool_setBottom(StringPool* poolDingsbums)
+void pool_setBottom( StringPool* poolDingsbums )
 {
 #ifndef CLINE_INTERNAL
 #if defined(using_commandLiner) || defined(WITH_STRGPOOL)
-    if(!getDingens( "pool" ) )
+    if(!getDingens( "pool" )) {
         addDingens( "pool", poolDingsbums, &poolDingsBumsWeg );
+    }
 #endif
 #endif
     defaultInstance = poolDingsbums;
@@ -219,6 +220,11 @@ StringPool* POOL_VOIDCALL( pop )
         free( inst->running );
         inst->running = t;
         --inst->Pls;
+  #if DEBUG>0
+    } else {
+        printf( "%s(): reached bottom %p \n",
+                __FUNCTION__, inst->running );
+  #endif
     } return inst->running;
 }
 
@@ -507,7 +513,6 @@ Slice POOL_VOIDCALL( slic )
 char* POOL_FUNCTION( last, int pos )
 {
     if( CYCLE_COUNT > pos ) {
-        //for( int i = 1; i < pos; ++i )
         pool->Cyc[pool->Pos[pos-1]] = '\0';
     } pos %= CYCLE_COUNT;
     pool->Cyc[pool->Pos[pos]] = pool->Cut[pos];
@@ -597,13 +602,13 @@ void POOL_VOIDCALL( cleanupCheckpoint )
 void POOL_VOIDCALL( freeAllCycles )
 {
    #if DEBUG>=1
-    printf("%s():\n", __FUNCTION__);
-    StringPool* ptrVal=0;
-    while ( (ptrVal = pool_pop()) != inst )
-        printf("%s(): next pop: %p\n",__FUNCTION__,ptrVal);
-    printf("%s(): all pools poped!\n",__FUNCTION__);
-   #endif
+    StringPool* ptrVal = inst->running;
+    do { printf("%s(): next pop: %p\n",__FUNCTION__,ptrVal);
+    } while ( (ptrVal = pool_pop()) != inst );
+    printf( "%s(): all pools poped!\n", __FUNCTION__ );
+   #else
     while ( pool_pop() != inst );
+   #endif
 }
 #endif
 

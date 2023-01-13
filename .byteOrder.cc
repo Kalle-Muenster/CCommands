@@ -38,7 +38,8 @@
 
 
 const static int SIZE_OFFSET = sizeof(WORD_SIZETYPE) - 1;
-int IS_BIG_ENDIAN(void) { return ENDIAN_IS_BIG___; }
+const static int isbigendian = (ENDIAN_IS_BIG___);
+int IS_BIG_ENDIAN(void) { return isbigendian; }
 
 
 typedef struct Stringo {
@@ -47,7 +48,7 @@ typedef struct Stringo {
     byte     bingo[5];
 };} Stringo;
 Stringo stringo = {
-     (fourCC)0
+    (fourCC)0u
 };
 const char* byteOrder_fourCCtoString(fourCC intVal)
 {
@@ -62,7 +63,7 @@ typedef struct Strongo {
     byte     bongo[9];
 };} Strongo;
 Strongo strongo = {
-    { '\0' }
+    (longCC)0ull
 };
 const char* byteOrder_longCCtoString( longCC longVal )
 {
@@ -103,33 +104,33 @@ byte* byteOrder_reverseData32( void* data, unsigned cbData )
 {
     const fourCC* end = (fourCC*)data + cbData/4;
     for( fourCC* dat = (fourCC*)data; dat != end; ++dat )
-        *dat=byteOrder_reverse32(*dat);
+        *dat = byteOrder_reverse32( *dat );
     return (byte*)data;
 }
 byte* byteOrder_reverseData64( void* data, unsigned cbData )
 {
     const longCC* end = (longCC*)data + cbData/8;
     for( longCC* dat = (longCC*)data; dat != end; ++dat )
-        *dat=byteOrder_reverse64(*dat);
+        *dat = byteOrder_reverse64( *dat );
     return (byte*)data;
 }
 byte* byteOrder_reverseData( void* data, unsigned cbData )
 {
     const WORD_SIZETYPE* end = (WORD_SIZETYPE*)data + cbData/WORD_BYTESIZE;
     for( WORD_SIZETYPE* dat = (WORD_SIZETYPE*)data; dat < end; ++dat )
-        *dat=byteOrder_reverse(*dat);
+        *dat = byteOrder_reverse( *dat );
     return (byte*)data;
 }
 
-char* byteOrder_resverseString( char* inputString )
+char* byteOrder_reverseString( char* inputString )
 {
     return (char*)byteOrder_reverseData( (void*)inputString, (uint)strlen(inputString) );
 }
-char* byteOrder_resverseString32( char* inputString )
+char* byteOrder_reverseString32( char* inputString )
 {
     return (char*)byteOrder_reverseData32( (void*)inputString, (uint)strlen(inputString) );
 }
-char* byteOrder_resverseString64( char* inputString )
+char* byteOrder_reverseString64( char* inputString )
 {
     return (char*)byteOrder_reverseData64( (void*)inputString, (uint)strlen(inputString) );
 }
@@ -184,21 +185,20 @@ int main(int argc,char**argv)
     }
 
     int mode;
-    byte* (*reverseDataFunction)( void*, unsigned );
+    byte* (*reverseStringFunction)( char* );
     if (isModus("32")) { mode = 32;
-        reverseDataFunction = &byteOrder_reverseData32;
+        reverseStringFunction = &byteOrder_reverseString32;
     } else
     if (isModus("64")) { mode = 64;
-        reverseDataFunction = &byteOrder_reverseData64;
+        reverseStringFunction = &byteOrder_reverseString64;
     } else { mode = 0;
-        reverseDataFunction = &byteOrder_reverseData;
+        reverseStringFunction = &byteOrder_reverseString;
     }
 
     if( search('d') ) {
-        printf("%s\n", reverseDataFunction(
-                                getName('d'),
-                         strlen(getName('d'))) );
-                         exit( CheckForError() ); }
+        printf( "%s\n", reverseStringFunction( getName('d') ) );
+        exit( CheckForError() );
+    }
 
     word hex = 0;
     if( search('i') ) {

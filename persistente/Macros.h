@@ -1,7 +1,7 @@
-#define VS2022 "\"C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/devenv.exe\""
+#define SOME_STRING_VALUE "blah..  blub"
 ///[Reflector]
 #define NUMBER_OF_MACROS (1)
 const static int _NUMBER_OF_MACROS = NUMBER_OF_MACROS;
 const static char* MACRO_NAMES[NUMBER_OF_MACROS] = {
-    "VS2022\0\"\\\"C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/devenv.exe\\\"\"",
+    "SOME_STRING_VALUE\0\"blah..  blub\"",
 };

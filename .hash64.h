@@ -17,17 +17,17 @@
 #include ".byteOrder.h"
 
 typedef ulong(*hash64_SimpleFunction)(const byte*,slong);
-typedef ulong(*hash64_SeededFunction)(const byte*,slong,ulong); 
+typedef ulong(*hash64_SeededFunction)(const byte*,slong,ulong);
 typedef struct Hash64Function {
-	union {
-		ulong(*simple)(const byte*,slong);
-		ulong(*seeded)(const byte*,slong,ulong);
-	} call;
-	union {
-		byte Byte[8];
-		uint Uint[2];
+    union {
+        ulong(*simple)(const byte*,slong);
+        ulong(*seeded)(const byte*,slong,ulong);
+    } call;
+    union {
+        byte Byte[8];
+        uint Uint[2];
        slong seed;
-	} data;	   
+    } data;
 } Hash64Function;
 
 Hash64Function hash64_SelectFunction( fourCC name, ulong seed );
@@ -35,15 +35,15 @@ Hash64Function hash64_SelectFunction( fourCC name, ulong seed );
 #define MakeHash64From2xHash32(name) ulong \
 hash64_ ## name ## ( const byte* data, slong size ) {\
     if( size < 2 ) {\
-	    setError( "2 byte minimum", FourCC("zwo") );\
-	return 0; }\
-	HashValue hash;\
-	slong halbe = (size/2);\
-	hash.parts[1] = name ## (pool_setb(data,halbe),halbe);\
-	data = data+halbe;\
-	halbe += size & 1;\
+        setError( "2 byte minimum", FourCC("zwo") );\
+    return 0; }\
+    HashValue hash;\
+    slong halbe = (size/2);\
+    hash.parts[1] = name ## (pool_setb(data,halbe),halbe);\
+    data = data+halbe;\
+    halbe += size & 1;\
     hash.parts[0] = name ## (pool_setb(data,halbe),halbe);\
-	return hash.value;\
+    return hash.value;\
 }
 
 #ifdef _OnTheFly_

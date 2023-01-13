@@ -181,19 +181,19 @@ StringPool* whirlVar( StringPool* poolBottom );
 // must have called before can use.
 StringPool* POOL_VOIDCALL(InitializeCycle);
 #if defined( EXTERNAL_POOLBOTTOM ) || defined( INTERNAL_POOLBOTTOM )
- #define   pool_InitializeCycle() pool_(InitializeCycle)(Pool)
+ #define    pool_InitializeCycle() pool_(InitializeCycle)(Pool)
 #else
 StringPool* pool_InitializeCycle(void);
 #endif
 
-void       pool_setBottom(StringPool*);
+void        pool_setBottom(StringPool*);
 StringPool* pool_getBottom(void);
 
 #ifndef NO_CHECKPOINT_MODE
 // pushes an additional chunk which can later be popped again,
 // by restoring the prior state it was in before.
 StringPool* POOL_VOIDCALL(push);
-#define    pool_push() pool_(push)(Pool)
+#define     pool_push() pool_(push)(Pool)
 
 // If additional instances may have been pushed before, this
 // frees the current active one on the top. - pop .. then it
@@ -202,7 +202,7 @@ StringPool* POOL_VOIDCALL(push);
 // does nothing then, returning pointer then just to the bottom,
 // just to the floor.
 StringPool* POOL_VOIDCALL(pop);
-#define    pool_pop() pool_(pop)(Pool)
+#define     pool_pop() pool_(pop)(Pool)
 
 // Set an existing instance into the Pool as 'current' whirl
 void       POOL_FUNCTION(attach,StringPool*);
@@ -210,7 +210,7 @@ void       POOL_FUNCTION(attach,StringPool*);
 
 // snatch the current active whirl off from the pool
 StringPool* POOL_VOIDCALL(detach);
-#define    pool_detach() pool_(detach)(Pool)
+#define     pool_detach() pool_(detach)(Pool)
 #endif
 
 

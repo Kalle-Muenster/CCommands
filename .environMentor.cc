@@ -316,39 +316,48 @@ FeatureGet getFeatured( const char* name )
     char* workB = &work[minlen+1];
     char workF = 'A';
     if( !isEmptyArg( varval ) ) {
+        int l=strlen(varval);
         while ( *varval == '\"' ) {
-            int l=strlen(varval);
-            if( varval[l-1]=='\"' ) {
+            if( varval[--l]=='\"' ) {
                 result.type.size[0] = (unsigned short)( (result.type.flags&Type_STRING)
-                                                      ? ((result.type.flags&~Type_STRING)|Type_PREPRO)
+                                                      ? ( (result.type.flags & ~Type_STRING) | Type_PREPRO )
                                                       : (result.type.flags|Type_STRING) );
-                char* t = &varval[1];
-                t[l-2]='\0';
-                varval = strcpy(workF=='A'?workB:workA,t);
+                varval = strcpy(workF=='A'?workB:workA,&varval[1]);
+                varval[--l] = 0;
                 workF = workF=='A' ? 'B':'A';
             } else {
                 result.type.size[0] = (unsigned short)( (result.type.flags&Type_STRING)
-                                                      ? ((result.type.flags&~Type_STRING)|Type_PREPRO)
+                                                      ? ((result.type.flags & ~Type_STRING)|Type_PREPRO)
                                                       : (result.type.flags|Type_ESCAPE) );
                 varval = strcpy(workF=='A'?workB:workA,varval);
                 workF = workF=='A' ? 'B':'A';
             }
         }
         if ( *varval == '(' ) {
-            char* t = strcpy(workF=='A'?workB:workA,&varval[1]);
-            workF = workF=='A' ? 'B':'A';
-            t[strlen(t)-1]='\0';
-            result.type.flags = (result.type.flags|Type_NUMBER);
-        #if DEBUG > 0
-            printf( "Found feature of: Type_NUMBER\n" );
-        #endif
-            const char* end = (const char*)t+strlen(t);
-            result.value.number = strtod(t,&end);
-        #if DEBUG > 0
-            printf("...which has value: %f\n", result.value.number);
-        #endif
-        } else
-        if( result.type.flags & Type_STRING ) {
+            l=strlen(varval);
+            while( varval[--l] != ')' ) {
+                varval = strcpy(workF=='A'?workB:workA,varval);
+                workF = workF=='A' ? 'B':'A';
+                if(l==0) break;
+            } varval[l] = '\0';
+            if ( *varval == '(' ) ++varval;
+            if ( l > 0 ) {
+                result.type.flags = (result.type.flags|Type_NUMBER);
+                #if DEBUG > 0
+                printf( "Found feature of: Type_NUMBER\n" );
+                #endif
+                const char* end = (const char*)varval+strlen(varval);
+                result.value.number = strtod(varval,&end);
+                #if DEBUG > 0
+                printf("...which has value: %f\n", result.value.number);
+                #endif
+                CleanArray( work );
+                mentor.scope = state;
+                return result;
+            } else {
+                result.type.flags = Type_NOTHIN;
+            }
+        } else if( result.type.flags & Type_STRING ) {
             char* t = varval-1;
             char sep = result.type.flags&Type_ENVVAR?WINDOWS?';':':':',';
             while( *++t ) {
@@ -385,6 +394,9 @@ FeatureGet getFeatured( const char* name )
                 while( *++faerenGuests );
             } result.type.size[1] = (word)guests;
             result.value.lister = faerenSeats;
+            CleanArray( work );
+            mentor.scope = state;
+            return result;
         } else if( result.type.flags & Type_STRING ) {
         #if DEBUG > 0
             printf( "Found feature of: Type_STRING\n" );
@@ -398,7 +410,7 @@ FeatureGet getFeatured( const char* name )
                            result.type.size[1] + nameLength + 2 );
 
             result.name = (const char*)strcpy(
-             result.value.string, result.name );
+            result.value.string, result.name );
 
             result.value.string += (nameLength+1);
             strcpy( result.value.string, &varval[0] );
@@ -415,19 +427,30 @@ FeatureGet getFeatured( const char* name )
 
 int setFeatured( FeatureGet* store )
 {
+    bool env = ( store->type.flags & Type_ENVVAR );
+    uint mac = ( store->type.flags > Type_MACROG )
+             ? LOCAL : GLOBAL;
     if ( store->type.flags ) {
-               if (store->type.flags&Type_NUMBER) {
-            setPersistEntry( store->name, setTempf( "(%d)", (char*)(ptval)*(ulong*)&store->value.number ) );
-        } else if (store->type.flags&Type_STRING) {
-            setPersistEntry( store->name, toQuoted( store->value.string ) );
-        } else if (store->type.flags&Type_LISTER) {
+        void( *schwup )( const char*, const char* );
+        if( env ) {
+            schwup = &setVariable;
+        } else {
+            if( !nonCommittedChanges() )
+                beginPersistChange( mac );
+            schwup = &setPersistEntry;
+        }      if ( store->type.flags&Type_NUMBER ) {
+            schwup( store->name, pool_setfl( "(%f)", store->value.number ) );
+        } else if ( store->type.flags&Type_STRING ) {
+            schwup( store->name, toQuoted( store->value.string ) );
+        } else if ( store->type.flags&Type_LISTER ) {
             char fromto[] = {'\0',SEPPEL,'\0'};
             toSplitList( store->value.lister, &fromto[0] );
-            setPersistEntry( store->name, toQuoted( *store->value.lister ) );
-        } else if (store->type.flags&Type_PREPRO) {
-            setPersistEntry( store->name, unQuoted( store->value.string ) );
-        }
-    }
+            schwup( store->name, toQuoted( *store->value.lister ) );
+        } else if ( store->type.flags&Type_PREPRO ) {
+            schwup( store->name, unQuoted( store->value.string ) );
+        } else return false;
+    } else return false;
+    return true;
 }
 
 int setFeaturedList( const char* feature, char* values )
@@ -525,11 +548,17 @@ int listedFeature( unsigned listOperation, const char* listName, char* setValue 
 }
 
 // sets a variable "name" in the environment to given "value".
-void setVariable(const char* name,const char* value)
+void setVariable( const char* name, const char* value )
 {
+    #if DEBUG
+    printf("%s(): %s = %s\n", __FUNCTION__,name,value);
+    #endif
     char buffer[MAX_NAM_LEN*2];
-    sprintf(&buffer[0],"%s=%s",name,value);
-    putenv(&buffer[0]);
+    sprintf( &buffer[0], "%s=%s", name,value );
+    putenv( &buffer[0] );
+    #if DEBUG
+    printf("%s(): %s ... return\n", __FUNCTION__, &buffer[0] );
+    #endif
 }
 
 /////////////////////////////////////////////////////////////////
@@ -964,9 +993,9 @@ void removePersistEntry( const char* name )
 
 void setPersistEntry( const char* name, const char* value )
 {
-    DEBUGFMT("will set macro: '%s'",name)
-    DEBUGFMT("   ...to value: '%s'",value)
-
+    #if DEBUG
+    printf("%s(): %s = %s\n", __FUNCTION__,name,value);
+    #endif
     if (mentor.scope == DISABLED) {
         setErrorText("beginPersitChange() was not called before!");
         return;
@@ -976,12 +1005,9 @@ void setPersistEntry( const char* name, const char* value )
     if( reflidx ) {
         features = getReflector(mentor.scope);
         int featurIndex = ( mentor.scope==LOCAL ? (reflidx>>16) : reflidx ) -1;
-        DEBUGFMT( "featurIndex: %i", featurIndex );
         char* destination = &features[featurIndex][0];
-        DEBUGFMT( "write address: %p", destination );
         copyNameAndValue( destination, name, value );
     } else {
-        DEBUGLOG( "not defined" )
         const int THE_NUMBER = mentor.scope==LOCAL
                          ? NUMBER_OF_FEATURES
                          : NUMBER_OF_MACROS;
@@ -1000,6 +1026,9 @@ void setPersistEntry( const char* name, const char* value )
                           name, value );
         ++mentor.featuresAdd;
     }
+    #if DEBUG
+    printf("%s(): return\n", __FUNCTION__);
+    #endif
 }
 
 int nonCommittedChanges(void)

@@ -87,10 +87,7 @@ const char* tokken_createB32( int size )
     MakeArray( char, out, size+1 )
     int p = 0;
     out[size]='\0';
-    const char* b32chars = BASE32_UPPER_DIGITS; // HEXSTRING_UPPERCASE 
-	                     //? BASE32_UPPER_DIGITS
-						 //: BASE32_LOWER_DIGITS;
-
+    const char* b32chars = BASE32_UPPER_DIGITS;
     while( size > p ) { int i = p; p += 16;
         ulong numb = rand() | ((ulong)rand() << 16) | ((ulong)rand() << 32) | ((ulong)rand() << 48);
         for(;i<p&&i<size;++i) {
@@ -105,15 +102,15 @@ tokken_Generator* tokken_define( tokken_CharSet forMode, int size, const char* g
 {
     char groupSep = 0;
     int groupCount = 0;
-	const int generatorsize = sizeof(tokken_Generator);
+    const int generatorsize = sizeof(tokken_Generator);
     tokken_Generator* arg;
-	
+
     if ( isEmptyArg(groupString) ) {
-		arg = (tokken_Generator*)junk_allocateJunkChunk( generatorsize );
+        arg = (tokken_Generator*)junk_allocateJunkChunk( generatorsize );
         arg->grouping = NULL;
-		arg->charset = forMode;
-		arg->size = size;
-		arg->create = &tokken_create;
+        arg->charset = forMode;
+        arg->size = size;
+        arg->create = &tokken_create;
         return arg;
     }
     MakeArray( char, groupArg, 2*strlen( groupString ) )
@@ -125,8 +122,8 @@ tokken_Generator* tokken_define( tokken_CharSet forMode, int size, const char* g
     } char seppl[3] = { groupSep, 0, 0 };
     grparg = groupArg;
     groupCount = toSplitList( groupArg, &seppl );
-	
-	arg = (tokken_Generator*)junk_allocateJunkChunk( ++groupCount + generatorsize + 1 );
+
+    arg = (tokken_Generator*)junk_allocateJunkChunk( ++groupCount + generatorsize + 1 );
     byte* groups = (byte*)arg + generatorsize;
     groups[0] = (byte)groupSep;
     arg->size = groups[groupCount] = 0;
@@ -134,8 +131,8 @@ tokken_Generator* tokken_define( tokken_CharSet forMode, int size, const char* g
         arg->size += (groups[i] = (byte)atoi( grparg ));
         while( *grparg++ );
     } arg->grouping = groups;
-	arg->create = &tokken_create;
-	arg->charset = forMode;
+    arg->create = &tokken_create;
+    arg->charset = forMode;
     CleanArray( groupArg )
     return arg;
 }
@@ -234,7 +231,7 @@ const char* tokken_groupedB32( int size, const char* grouping )
     if(!group) group = (byte*)&d[1];
     MakeArray( char, outbuf, size + groups )
     outbuf[(size+groups)-1]='\0';
-	const char* b32chars = BASE32_UPPER_DIGITS;
+    const char* b32chars = BASE32_UPPER_DIGITS;
     while( size > p ) { int i = p; p += 16;
         ulong numb = rand() | ((ulong)rand() << 16) | ((ulong)rand() << 32) | ((ulong)rand() << 48);
         for( ; i<p && i<size; ++i ) {
@@ -254,13 +251,13 @@ const char* tokken_create( const tokken_Generator* mode )
     if( mode->grouping ) {
         switch ( mode->charset ) {
             case tokken_HEX: return tokken_groupedHex( mode->size, mode->grouping );
-			case tokken_B32: return tokken_groupedB32( mode->size, mode->grouping );
+            case tokken_B32: return tokken_groupedB32( mode->size, mode->grouping );
             case tokken_B64: return tokken_groupedB64( mode->size, mode->grouping );
         }
     } else {
         switch ( mode->charset ) {
             case tokken_HEX: return tokken_createHex( mode->size );
-			case tokken_B32: return tokken_createB32( mode->size );
+            case tokken_B32: return tokken_createB32( mode->size );
             case tokken_B64: return tokken_createB64( mode->size );
         }
     } setErrorText( "unknown token charset" );
@@ -290,26 +287,26 @@ int main(int argc,char**argv)
     }
 
     uint count = 1;
-	int  size = 0;
+    int  size = 0;
     char* sizeArg;
     char* countArg;
     char* groupArg;
-	tokken_CharSet charset;
-	
+    tokken_CharSet charset;
+
     if ( search('g') ) {
         groupArg = getName('g');
     } else groupArg = NoString;
 
 
     if( search('h') ) {
-		charset = tokken_HEX;
+        charset = tokken_HEX;
         countArg = sizeArg = getName('h');
     } else if ( search('b') ) {
-		charset = tokken_B64;
+        charset = tokken_B64;
         base64_Initialize();
         countArg = sizeArg = getName('b');
     } else if ( search('3') ) {
-		charset = tokken_B32;
+        charset = tokken_B32;
         countArg = sizeArg = getName('3');
     } else exit( USAGE(tokken) );
 
@@ -318,15 +315,15 @@ int main(int argc,char**argv)
         count = atoi( ++countArg );
         break;
     } size = atoi( sizeArg );
-	
-	tokken_Generator* grp = tokken_define( charset, size, groupArg );
+
+    tokken_Generator* grp = tokken_define( charset, size, groupArg );
 
     if( isModus( "verbose" ) ) {
         printf( "generating %i token%s",
                 count, count > 1 ? "s\n" : "\n" );
         printf( "using '%s' charset\n", hasOption('b')
-              ? "B64Table" : hasOption('h') 
-			  ? "HexValue" : "B32Table" );
+              ? "B64Table" : hasOption('h')
+              ? "HexValue" : "B32Table" );
     } printf("\n");
 
     FILE* output = stdout;

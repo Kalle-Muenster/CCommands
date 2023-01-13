@@ -88,7 +88,7 @@ COMMANDLINER_EXTERN_C
     // integrate already existing memory that before was allocated some where else.
     JUNKYARD_API void*   junk_registerJunkChunk( void* );
 
-    // allocate an object of objSize bytes, which at shuttdown or at dropAllChunks()
+    // allocate an object of objSize bytes, which at shuttdown or with dropYard()
     // calls will be passed as parameter to the given destructor function at least.
     JUNKYARD_API void*   junk_allocateNewObject( cmDtFunc objDtor, uint objSize );
 
@@ -109,8 +109,8 @@ COMMANDLINER_EXTERN_C
     // mark a piece of junk for being dropped during the next recycle call
     JUNKYARD_API ptval   junk_drop( void* );
 
-    // drop one piece of junk from the junkyard (frees one portion of memory
-    // which was previously allocated on the junkyard)
+    // drop one piece of junk from the junkyard at once! (frees
+    // memory which was previously allocated on the junkyard )
     JUNKYARD_API ptval   junk_free( void* );
 
 #endif

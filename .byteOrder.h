@@ -104,9 +104,9 @@ FOURCC_API longCC        byteOrder_reverse64(longCC input);
 FOURCC_API byte*         byteOrder_reverseData(void* data,unsigned cbData);
 FOURCC_API byte*         byteOrder_reverseData32(void* data,unsigned cbData);
 FOURCC_API byte*         byteOrder_reverseData64(void* data,unsigned cbData);
-FOURCC_API char*         byteOrder_resverseString(char* inputString);
-FOURCC_API char*         byteOrder_resverseString32(char* inputString);
-FOURCC_API char*         byteOrder_resverseString64(char* inputString);
+FOURCC_API char*         byteOrder_reverseString(char* inputString);
+FOURCC_API char*         byteOrder_reverseString32(char* inputString);
+FOURCC_API char*         byteOrder_reverseString64(char* inputString);
 
 #if WORD_BYTESIZE >= 8
 #define SIZECC longCC

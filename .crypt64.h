@@ -39,7 +39,8 @@ extern "C" {
 #define CRYPT64_DECRYPTED_SIZE(size) BASE64_DECODED_SIZE( (size-16u) )
 
     typedef b64Frame k64Chunk;
-
+	typedef b64State k64State;
+	
     typedef struct CRYPS64_API K64 {
         const char* table;
         union {
@@ -76,11 +77,24 @@ extern "C" {
 #include <crypt64.h>
 #else
 
-   CRYPS64_API void     crypt64_Initialize( bool init );
-   CRYPS64_API ulong    crypt64_currentContext( void );
+   CRYPS64_API k64State*crypt64_InitializeState( k64State* state );
+   CRYPS64_API k64Chunk crypt64_EncryptFrame( k64State* state, K64* key64, k64Chunk threeByte );
+   CRYPS64_API k64Chunk crypt64_DecryptFrame( k64State* state, K64* key64, k64Chunk fourChars );
+   CRYPS64_API uint     crypt64_Encrypt( k64State* state, K64* key64, const byte* data, uint size, char* dest );
+   CRYPS64_API uint     crypt64_Decrypt( k64State* state, K64* key64, const char* data, uint size, byte* dest );
+   CRYPS64_API uint     crypt64_EncryptFile( k64State* state, K64* key64, const char* src, const char* dst );
+   CRYPS64_API uint     crypt64_DecryptFile( k64State* state, K64* key64, const char* src, const char* dst );
+   CRYPS64_API k64Chunk crypt64_binary_EncryptFrame( k64State* state, K64* key64, k64Chunk threeByte );
+   CRYPS64_API k64Chunk crypt64_binary_DecryptFrame( k64State* state, K64* key64, k64Chunk threeByte );
+   CRYPS64_API uint     crypt64_binary_Encrypt( k64State* state, K64* key, const byte* data, uint size, byte* dest );
+   CRYPS64_API uint     crypt64_binary_Decrypt( k64State* state, K64* key, const byte* data, uint size, byte* dest );
+   CRYPS64_API uint     crypt64_binary_EncryptFile( k64State* state, K64* key64, const char* src, const char* dst );
+   CRYPS64_API uint     crypt64_binary_DecryptFile( k64State* state, K64* key64, const char* src, const char* dst );
 
-
-   CRYPS64_API K64F*    crypt64_createFileStream( K64* key, const char* path, const char* mode );
+   CRYPS64_API K64F*    crypt64_CreateFileStream( b64State* state, K64* key, const char* path, const char* mode );
+   CRYPS64_API bool     crypt64_SetContext( k64State* state, K64* key, byte mod );
+   CRYPS64_API const char* crypt64_SwapTable( k64State*, K64* key );
+   
    CRYPS64_API uint     crypt64_sread( byte* dst, uint size, uint count, K64F* cryps );
    CRYPS64_API uint     crypt64_nonbuffered_sread( byte* dst, uint size, uint count, K64F* cryps );
    CRYPS64_API uint     crypt64_swrite( const byte* src, uint size, uint count, K64F* cryps );
@@ -93,6 +107,15 @@ extern "C" {
    CRYPS64_API void     crypt64_close( K64F* stream );
    CRYPS64_API ptval    crypt64_sizeof( K64F* stream );
 
+   // depricated - created streams always are handeld by same static state internally
+   CRYPS64_API void     crypt64_Initialize( bool init );
+   CRYPS64_API k64State*crypt64_GetDefaultState( void );
+   CRYPS64_API k64Chunk crypt64_encryptFrame(K64* key64, k64Chunk threeByte);
+   CRYPS64_API k64Chunk crypt64_decryptFrame(K64* key64, k64Chunk fourChars);
+   CRYPS64_API k64Chunk crypt64_binary_encryptFrame(K64* key64, k64Chunk threeByte);
+   CRYPS64_API k64Chunk crypt64_binary_decryptFrame(K64* key64, k64Chunk threeByte);
+   CRYPS64_API K64F*    crypt64_createFileStream( K64* key, const char* path, const char* mode );
+   
    CRYPS64_API K64* crypt64_allocateNewKey(void);
    CRYPS64_API K64* crypt64_initializeKey(K64* key,ulong value);
    CRYPS64_API K64* crypt64_createKeyFromPass(const char* passphrase);
@@ -102,11 +125,12 @@ extern "C" {
    CRYPS64_API void crypt64_invalidateKey(K64* key);
    CRYPS64_API int  crypt64_isValidKey(K64* key);
 
-   CRYPS64_API int  crypt64_prepareContext( K64* key, byte mod );
-   CRYPS64_API int  crypt64_releaseContext( K64* key );
-   CRYPS64_API bool crypt64_setContext(K64* key, byte mod);
-   CRYPS64_API int crypt64_verifyValidator( K64* key, const byte* dat );
-   CRYPS64_API const char* crypt64_createValidator( K64* key );
+   
+   CRYPS64_API int  crypt64_prepareContext( K64* key, byte mod, k64State* maybe );
+   CRYPS64_API int  crypt64_releaseContext( K64* key, k64State* maybe );
+   CRYPS64_API bool crypt64_setContext( K64* key, byte mod );
+   CRYPS64_API int  crypt64_verifyValidator( K64* key, const byte* dat, k64State* maybe );
+   CRYPS64_API const char* crypt64_createValidator( K64* key, k64State* maybe );
    CRYPS64_API const char* crypt64_swapTable(K64* key);
    CRYPS64_API uint crypt64_encrypt(K64* key64, const byte* data, uint size, char* dest);
    CRYPS64_API uint crypt64_decrypt(K64* key64, const char* data, uint size, byte* dest);
@@ -114,17 +138,14 @@ extern "C" {
    CRYPS64_API uint crypt64_decryptFile(K64* key64, const char* src, const char* dst);
    CRYPS64_API uint crypt64_decryptStdIn(K64*, FILE* destination);
    CRYPS64_API uint crypt64_encryptStdIn(K64*, FILE* destination);
-   CRYPS64_API k64Chunk crypt64_encryptFrame(K64* key64, k64Chunk threeByte);
-   CRYPS64_API k64Chunk crypt64_decryptFrame(K64* key64, k64Chunk fourChars);
-
+   
    CRYPS64_API uint crypt64_binary_encrypt(K64* key, const byte* data, uint size, byte* dest);
    CRYPS64_API uint crypt64_binary_decrypt(K64* key, const byte* data, uint size, byte* dest);
    CRYPS64_API uint crypt64_binary_encryptFile(K64* key64, const char* src, const char* dst);
    CRYPS64_API uint crypt64_binary_decryptFile(K64* key64, const char* src, const char* dst);
    CRYPS64_API uint crypt64_binary_decryptStdIn(K64*, FILE* destinatin);
    CRYPS64_API uint crypt64_binary_encryptStdIn(K64*, FILE* destinatin);
-   CRYPS64_API k64Chunk crypt64_binary_encryptFrame(K64* key64, k64Chunk threeByte);
-   CRYPS64_API k64Chunk crypt64_binary_decryptFrame(K64* key64, k64Chunk threeByte);
+   
 
 #endif
 #ifdef _OnTheFly_

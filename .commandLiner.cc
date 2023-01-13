@@ -1114,8 +1114,16 @@ void DestructCommander( void )
     while( PopCommandLine( false ) );
     while( c.running->dingens ) {
         Ding* weg = c.running->dingens;
+        #if DEBUG
+        printf( "%s(): %s dingens at address %p\n",
+                __FUNCTION__, (cmLn)&weg->dasda, weg );
+        #endif
         ulong dingsbumsId = weg->dasda;
         if( weg->bumms ) weg->bumms();
+        #if DEBUG
+        printf( "%s(): %s dingens points instance %p\n",
+                __FUNCTION__, (cmLn)&dingsbumsId, weg->point );
+        #endif
         weg->point = 0;
         c.running->dingens = weg->dings;
         free( weg );

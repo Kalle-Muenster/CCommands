@@ -9,4 +9,4 @@
 #define _OnTheFly_ crypt64
 #define crypt64 ""
 #include ".crypt64.h"
-int main(int argc,char** argv);
+int main( int argc, char** argv );
